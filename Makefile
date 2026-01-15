@@ -23,6 +23,8 @@ clean:
 	rm -f lang
 	rm -f out.xml
 	rm -f out2.xml
+	rm -f lang
+	rm -f out
 
 .c.o:
 	g++ $(COPTS) $? -o $@
@@ -30,13 +32,13 @@ clean:
 .cpp.o:
 	g++ $(COPTS) $? -o $@
 
-main.o: main.cpp langlex.c 
+main.o: main.cpp langlex.cpp 
 	g++ $(COPTS) main.cpp -o main.o
 
-langlex.c: lang.l
-	flex -o langlex.c lang.l
+langlex.cpp: lang.l
+	flex -o langlex.cpp lang.l
 
-langlex.o: langlex.c
+langlex.o: langlex.cpp
 	g++ $(COPTS) -Wno-sign-compare $? -o $@
 
 cSymbolTable.o: cSymbolTable.cpp cSymbolTable.h cSymbol.h
