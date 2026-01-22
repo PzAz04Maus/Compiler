@@ -24,8 +24,11 @@
 
 // Uncomment the following line after integrating your symbol table with
 // your scanner.
-//#define TEST2
+#define TEST2
+//addon
 
+//define extern cSymbolTable g_symbolTable;
+//extern cSymbolTable g_symbolTable = cSymbolTable();
 
 cSymbolTable g_symbolTable;
 long long cSymbol::nextId = 0;

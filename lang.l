@@ -40,25 +40,76 @@ int Return(int val);
 %option yylineno
 
     /* definitions go here. whitespace is an example. */
-whitespace      '[\t\n\r ]'
-letters          [a-z]
-program                   DO_RETURN(PROGRAM);
+whitespace      [\t\n\r ]+
+
+digit           [0-9]
+int_lit         {digit}+
+float_lit       {digit}+\.{digit}+
+
+id_start        [A-Za-z_]
+id_cont         [A-Za-z0-9_]
+identifier      {id_start}{id_cont}*
 
 %%
-{whitespace}+               {} /* Ignore whitespace */
-;                           {} /* Ignore semicolons */
-    /* control scope with curly braces
-     NOTE: This functionality will eventually move to the parser
-    */
-"{"                         return OPEN;
-"}"                         return CLOSE;
-LOCAL                       return LOCAL;
-GLOBAL                      return GLOBAL;
-LOOKUP                      return LOOKUP;
-INSERT                      return INSERT;
-[a-z]+                      {
+{whitespace}                { /* Ignore whitespace */ }
+"//"[^\n]*                { /* Ignore // comments */ }
+
+"program"                   DO_RETURN(PROGRAM);
+"if"                        DO_RETURN(IF);
+"else"                      DO_RETURN(ELSE);
+"endif"                     DO_RETURN(ENDIF);
+"while"                     DO_RETURN(WHILE);
+"print"                     DO_RETURN(PRINT);
+"prints"                    DO_RETURN(PRINTS);
+"char"                      DO_RETURN(CHAR);
+"int"                       DO_RETURN(INT);
+"long"                      DO_RETURN(LONG);
+"float"                     DO_RETURN(FLOAT);
+"double"                    DO_RETURN(DOUBLE);
+"struct"                    DO_RETURN(STRUCT);
+"array"                     DO_RETURN(ARRAY);
+"return"                    DO_RETURN(RETURN);
+
+"=="                        DO_RETURN(EQUALS);
+"!="                        DO_RETURN(NOT_EQUALS);
+"&&"                        DO_RETURN(AND);
+"||"                        DO_RETURN(OR);
+">="                        DO_RETURN(GE);
+"<="                        DO_RETURN(LE);
+
+{float_lit}                  DO_RETURN(FLOAT_VAL);
+{int_lit}                    DO_RETURN(INT_VAL);
+
+"\""([^\\\n]|\\.)*"\""   DO_RETURN(STRING_LIT);
+
+"{"                         { g_symbolTable.IncreaseScope(); return '{'; }
+"}"                         { g_symbolTable.DecreaseScope(); return '}'; }
+"("                         return '(';
+")"                         return ')';
+"["                         return '[';
+"]"                         return ']';
+","                         return ',';
+";"                         return ';';
+"."                         return '.';
+"+"                         return '+';
+"-"                         return '-';
+"/"                         return '/';
+"*"                         return '*';
+"%"                         return '%';
+">"                         return '>';
+"<"                         return '<';
+"="                         return '=';
+
+LOCAL                        return LOCAL;
+GLOBAL                       return GLOBAL;
+LOOKUP                       return LOOKUP;
+INSERT                       return INSERT;
+
+{identifier}                 {
                                 return ProcessID();
                             }
+
+.                            DO_RETURN(JUNK_TOKEN);
 
 %%
 
