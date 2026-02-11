@@ -1,48 +1,48 @@
-#**************************************
-# Makefile
-#
-# Makefile for lang compiler
-#
-# Author: Phil Howard 
-# phil.howard@oit.edu
-#
-# Date: Jan. 12, 2016
-#
+##**************************************
+## Makefile
+##
+## Build routine for lang compiler
+##
+## Author: Phil Howard 
+## phil.howard@oit.edu
+##
+## Date: Jan. 18, 2015
+##
 
-COPTS=-Wall -g -c -O0 -std=c++11 -DTEST2
+COPTS=-Wall -g -c  -O0 -std=c++11
 OBJS=main.o \
 	 langlex.o \
-	 cSymbolTable.o \
+	 langparse.o \
+	 cVisitor.o
 
 all: lang
 
 clean:
 	rm -f $(OBJS)
-	rm -f *.o
 	rm -f langlex.c
+	rm -f langparse.c
+	rm -f langparse.h
 	rm -f lang
 	rm -f out.xml
 	rm -f out2.xml
-	rm -f lang
-	rm -f out
-
-.c.o:
-	g++ $(COPTS) $? -o $@
 
 .cpp.o:
 	g++ $(COPTS) $? -o $@
 
-main.o: main.cpp langlex.cpp 
-	g++ $(COPTS) main.cpp -o main.o
+.c.o:
+	g++ $(COPTS) $? -o $@
 
-langlex.cpp: lang.l
-	flex -o langlex.cpp lang.l
+main.o: main.cpp langparse.c langlex.c 
+	g++ $(COPTS) main.cpp -o $@
 
-langlex.o: langlex.cpp
+langlex.o: langlex.c
 	g++ $(COPTS) -Wno-sign-compare $? -o $@
 
-cSymbolTable.o: cSymbolTable.cpp cSymbolTable.h cSymbol.h
-	g++ $(COPTS) cSymbolTable.cpp -o cSymbolTable.o
+langlex.c: lang.l langparse.c
+	flex -o langlex.c lang.l
+
+langparse.c: lang.y
+	bison --defines=langparse.h lang.y -o langparse.c
 
 lang: $(OBJS)
 	g++ $(OBJS) -o lang

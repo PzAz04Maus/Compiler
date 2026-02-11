@@ -1,3 +1,4 @@
 .gitignore
-test/*
-test lab1/*
+/test
+/deprecated
+/copypaste
