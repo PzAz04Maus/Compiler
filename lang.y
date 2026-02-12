@@ -18,12 +18,14 @@
  /* union defines the type for lexical values */
 %union{
     int             int_val;
+    float           float_val;
     std::string*    str_val;
     cAstNode*       ast_node;
     cProgramNode*   program_node;
     cBlockNode*     block_node;
     cStmtsNode*     stmts_node;
-    cPrintNode*     stmt_node;
+    cStmtNode*      stmt_node;
+    //cPrintNode*     stmt_node;
     cExprNode*      expr_node;
     cIntExprNode*   int_node;
     cSymbol*        symbol;
@@ -59,6 +61,10 @@
 
 %type <program_node> program
 %type <block_node> block
+
+%type <decls_node> decls;
+%type <decl_node> decl;
+
 %type <ast_node> open
 %type <ast_node> close
 %type <ast_node> decls

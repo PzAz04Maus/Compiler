@@ -14,8 +14,8 @@
 // The first one does NOT create debug output, the second does.
 // Uncomment one or the other then use DO_RETURN(val) for all your return 
 // statements
-#define DO_RETURN(a) { return (a); }
-//#define DO_RETURN(a) { return Return(a); }
+//#define DO_RETURN(a) { return (a); }
+#define DO_RETURN(a) { return Return(a); }
 
 int Return(int val);
 
@@ -34,6 +34,9 @@ program                     DO_RETURN(PROGRAM);
 print                       DO_RETURN(PRINT);
 [0-9]+                      {yylval.int_val = atoi(yytext); DO_RETURN(INT_VAL);}
 [{};()]                     DO_RETURN(yytext[0]);
+
+"{"                         { g_symbolTable.IncreaseScope(); DO_RETURN '{'; }
+"}"                         { g_symbolTable.DecreaseScope(); DO_RETURN '}'; }
 
 %%
 
