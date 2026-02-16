@@ -13,7 +13,7 @@
 #include <iostream>
 #include <fstream>
 //#include "cSymbol.h"
-//#include "cSymbolTable.h"
+#include "cSymbolTable.h"
 #include "lex.h"
 #include "astnodes.h"
 #include "langparse.h"
@@ -28,6 +28,14 @@ int main(int argc, char **argv)
 {
     const char *outfile_name;
     int result = 0;
+
+    // Preload primitive types so they have stable IDs and can be reused.
+    // This matches the expected AST output for declarations.
+    g_symbolTable.Insert(new cSymbol("char"));
+    g_symbolTable.Insert(new cSymbol("int"));
+    g_symbolTable.Insert(new cSymbol("float"));
+    g_symbolTable.Insert(new cSymbol("long"));
+    g_symbolTable.Insert(new cSymbol("double"));
 
     if (argc > 1)
     {

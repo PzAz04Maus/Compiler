@@ -13,7 +13,8 @@ COPTS=-Wall -g -c  -O0 -std=c++11
 OBJS=main.o \
 	 langlex.o \
 	 langparse.o \
-	 cVisitor.o
+	 cVisitor.o \
+	 cSymbolTable.o
 
 all: lang
 
@@ -27,10 +28,10 @@ clean:
 	rm -f out2.xml
 
 .cpp.o:
-	g++ $(COPTS) $? -o $@
+	g++ $(COPTS) $< -o $@
 
 .c.o:
-	g++ $(COPTS) $? -o $@
+	g++ $(COPTS) $< -o $@
 
 main.o: main.cpp langparse.c langlex.c 
 	g++ $(COPTS) main.cpp -o $@
@@ -38,11 +39,15 @@ main.o: main.cpp langparse.c langlex.c
 langlex.o: langlex.c
 	g++ $(COPTS) -Wno-sign-compare $? -o $@
 
-langlex.c: lang.l langparse.c
+langlex.c: lang.l langparse.h
 	flex -o langlex.c lang.l
 
 langparse.c: lang.y
 	bison --defines=langparse.h lang.y -o langparse.c
+
+langparse.h: langparse.c
+
+cVisitor.o: cVisitor.cpp langparse.h
 
 lang: $(OBJS)
 	g++ $(OBJS) -o lang

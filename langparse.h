@@ -44,6 +44,23 @@
 #if YYDEBUG
 extern int yydebug;
 #endif
+/* "%code requires" blocks.  */
+#line 17 "lang.y"
+
+    #include <string>
+
+    class cAstNode;
+    class cProgramNode;
+    class cBlockNode;
+    class cDeclsNode;
+    class cDeclNode;
+    class cStmtsNode;
+    class cStmtNode;
+    class cExprNode;
+    class cIntExprNode;
+    class cSymbol;
+
+#line 64 "langparse.h"
 
 /* Token kinds.  */
 #ifndef YYTOKENTYPE
@@ -85,21 +102,25 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 19 "lang.y"
+#line 35 "lang.y"
 
     int             int_val;
+    float           float_val;
     std::string*    str_val;
     cAstNode*       ast_node;
     cProgramNode*   program_node;
     cBlockNode*     block_node;
+    cDeclsNode*     decls_node;
+    cDeclNode*      decl_node;
     cStmtsNode*     stmts_node;
-    cPrintNode*     stmt_node;
+    cStmtNode*      stmt_node;
+    //cPrintNode*     stmt_node;
     cExprNode*      expr_node;
     cIntExprNode*   int_node;
     cSymbol*        symbol;
     
 
-#line 103 "langparse.h"
+#line 124 "langparse.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

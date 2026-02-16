@@ -1,5 +1,8 @@
 #include "cSymbolTable.h"
 
+// Global symbol table instance
+cSymbolTable g_symbolTable;
+
 cSymbolTable::cSymbolTable()
 {
     // Start with a global scope so Insert/FindLocal are always safe.
