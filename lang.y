@@ -96,7 +96,7 @@
 %type <ast_node> close
 %type <decl_node> var_decl
 %type <decl_node> struct_decl
-%type <ast_node> array_decl
+%type <decl_node> array_decl
 %type <func_node> func_decl
 %type <func_node> func_header
 %type <func_node> func_prefix
@@ -143,13 +143,11 @@ decls:      decls decl
 decl:       var_decl ';'
                                 { $$ = $1; }
         |   array_decl ';'
-                            { $$ = nullptr; }
+                            { $$ = $1; }
         |   struct_decl ';'
                             { $$ = $1; }
         |   func_decl
                             { $$ = $1; }
-        |   error ';'
-                            { $$ = nullptr; }
 
 var_decl:   TYPE_ID IDENTIFIER
                                     { 
@@ -175,7 +173,19 @@ struct_decl: STRUCT open decls close IDENTIFIER
     }
                                 
 array_decl:   ARRAY TYPE_ID '[' INT_VAL ']' IDENTIFIER
-                                {  }
+    {
+        cSymbol *newTypeSym = $6;   // <-- int10 or s (THIS becomes a TYPE_ID later)
+
+        if (g_symbolTable.FindLocal(newTypeSym->GetName()) == nullptr)
+        {
+            newTypeSym = new cSymbol(newTypeSym->GetName());
+            g_symbolTable.Insert(newTypeSym);
+        }
+
+        g_symbolTable.DeclareType(newTypeSym);   // <-- critical: makes lexer return TYPE_ID later
+
+        $$ = new cArrayDeclNode($4, $2, newTypeSym);  // count, base type, new type name
+    }
 
 func_decl:  func_header ';'
                                 { $$ = $1; g_symbolTable.DecreaseScope(); }
@@ -229,7 +239,7 @@ stmt:       IF '(' expr ')' stmts ENDIF ';'
         |   PRINT '(' expr ')' ';'
                                 { $$ = new cPrintNode($3); }
         |   PRINTS '(' STRING_LIT ')' ';'
-                                { }
+                                { $$ = new cPrintsNode(*$3); delete $3; }
         |   lval '=' expr ';'
                             { $$ = new cAssignNode($1, $3); }
         |   func_call ';'
@@ -238,8 +248,6 @@ stmt:       IF '(' expr ')' stmts ENDIF ';'
                             { $$ = $1; }
         |   RETURN expr ';'
                             { $$ = new cReturnNode($2); }
-        |   RETURN '(' expr ')' ';'
-                            { $$ = new cReturnNode($3); }
         |   error ';'
                             {}
 
@@ -276,7 +284,7 @@ param:      expr
 ;
 
 expr:       expr EQUALS addit
-                                {  }
+                                { $$ = new cBinaryExprNode($1,EQUALS,$3); }
         |   addit
                             { $$ = $1; }
 

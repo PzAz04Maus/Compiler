@@ -22,6 +22,7 @@
 #include "cProgramNode.h"
 #include "cOpNode.h"
 #include "cPrintNode.h"
+#include "cPrintsNode.h"
 #include "cIfNode.h"
 #include "cReturnNode.h"
 #include "cExprNode.h"
@@ -37,3 +38,4 @@
 #include "cArgsNode.h"
 #include "cFuncCallNode.h"
 #include "cParamsNode.h"
+#include "cArrayDeclNode.h"

@@ -19,6 +19,7 @@ class cIntExprNode;
 class cIfNode;
 class cOpNode;
 class cPrintNode;
+class cPrintsNode;
 class cProgramNode;
 class cReturnNode;
 class cStmtNode;
@@ -48,6 +49,7 @@ class cVisitor
         virtual void Visit(cIfNode *node);
         virtual void Visit(cOpNode *node);
         virtual void Visit(cPrintNode *node);
+        virtual void Visit(cPrintsNode *node);
         virtual void Visit(cProgramNode *node);
         virtual void Visit(cReturnNode *node);
         virtual void Visit(cStmtNode *node);
