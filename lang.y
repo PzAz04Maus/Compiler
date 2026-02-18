@@ -29,6 +29,10 @@
     class cIntExprNode;
     class cSymbol;
     class cStructDeclNode;
+    class cArgsNode;
+    class cFuncCallNode;
+    class cFuncDeclNode;
+    class cParamsNode;
 }
 
 %locations
@@ -45,10 +49,13 @@
     cDeclNode*      decl_node;
     cStmtsNode*     stmts_node;
     cStmtNode*      stmt_node;
-    //cPrintNode*     stmt_node;
+    //cPrintNode*   stmt_node;
     cExprNode*      expr_node;
     cIntExprNode*   int_node;
     cSymbol*        symbol;
+    cFuncDeclNode*  func_node;
+    cArgsNode*      args_node;
+    cParamsNode*    params_node;
     }
 
 %{
@@ -90,17 +97,17 @@
 %type <decl_node> var_decl
 %type <decl_node> struct_decl
 %type <ast_node> array_decl
-%type <ast_node> func_decl
-%type <ast_node> func_header
-%type <ast_node> func_prefix
-%type <ast_node> func_call
-%type <ast_node> paramsspec
-%type <ast_node> paramspec
+%type <func_node> func_decl
+%type <func_node> func_header
+%type <func_node> func_prefix
+%type <expr_node> func_call
+%type <args_node> paramsspec
+%type <decl_node> paramspec
 %type <stmts_node> stmts
 %type <stmt_node> stmt
 %type <expr_node> lval
-%type <ast_node> params
-%type <ast_node> param
+%type <params_node> params
+%type <expr_node> param
 %type <expr_node> expr
 %type <expr_node> addit
 %type <expr_node> term
@@ -140,7 +147,7 @@ decl:       var_decl ';'
         |   struct_decl ';'
                             { $$ = $1; }
         |   func_decl
-                            { $$ = nullptr; }
+                            { $$ = $1; }
         |   error ';'
                             { $$ = nullptr; }
 
@@ -171,24 +178,42 @@ array_decl:   ARRAY TYPE_ID '[' INT_VAL ']' IDENTIFIER
                                 {  }
 
 func_decl:  func_header ';'
-                                {  }
-        |   func_header  '{' decls stmts '}'
-                                {  }
-        |   func_header  '{' stmts '}'
-                                {  }
-func_header: func_prefix paramsspec ')'
-                                {  }
-        |    func_prefix ')'
-                            {  }
-func_prefix: TYPE_ID IDENTIFIER '('
-                                {  }
-paramsspec:  paramsspec ',' paramspec
-                                {  }
-        |   paramspec
-                            {  }
+                                { $$ = $1; g_symbolTable.DecreaseScope(); }
+    | func_header '{' decls stmts '}'
+        { $1->SetDecls($3); $1->SetStmts($4); $$ = $1; g_symbolTable.DecreaseScope(); }
+    | func_header '{' stmts '}'
+        { $1->SetStmts($3); $$ = $1; g_symbolTable.DecreaseScope(); }
+;
 
-paramspec:  var_decl
-                                    {  }
+func_header: func_prefix paramsspec ')'
+                                { $1->SetArgs($2); $$ = $1; }
+    | func_prefix ')'
+                                { $$ = $1; }
+;
+
+func_prefix: TYPE_ID IDENTIFIER '('
+{
+    cSymbol *fn = $2;
+    if (g_symbolTable.FindLocal(fn->GetName()) == nullptr)
+    {
+        fn = new cSymbol(fn->GetName());
+        g_symbolTable.Insert(fn);
+    }
+    $$ = new cFuncDeclNode($1, fn);
+
+    // parameter scope (so params don't reuse global 'a')
+    g_symbolTable.IncreaseScope();
+}
+;
+
+paramsspec:
+      paramsspec ',' paramspec
+        { $1->Insert($3); $$ = $1; }
+    | paramspec
+        { $$ = new cArgsNode($1); }
+;
+
+paramspec: var_decl { $$ = $1; };
 
 stmts:      stmts stmt
                                 { $1->Insert($2); $$ = $1; }
@@ -208,7 +233,7 @@ stmt:       IF '(' expr ')' stmts ENDIF ';'
         |   lval '=' expr ';'
                             { $$ = new cAssignNode($1, $3); }
         |   func_call ';'
-                            {  }
+                            { $$ = $1; }
         |   block
                             { $$ = $1; }
         |   RETURN expr ';'
@@ -218,10 +243,13 @@ stmt:       IF '(' expr ')' stmts ENDIF ';'
         |   error ';'
                             {}
 
-func_call:  IDENTIFIER '(' params ')'
-                                    {  }
-        |   IDENTIFIER '(' ')'
-                            {  }
+func_call:
+      IDENTIFIER '(' params ')'
+        { $$ = new cFuncCallNode($1, $3); }
+    | IDENTIFIER '(' ')'
+        { $$ = new cFuncCallNode($1, nullptr); }
+;
+
 
 varref: varref '.' varpart
     { ((cVarRefNode*)$1)->AddField($3); $$ = $1; }
@@ -236,13 +264,16 @@ varpart:  IDENTIFIER
 lval:     varref
                                 { $$ = $1; }
 
+
 params:   params ',' param
-                                {  }
+                                { $1->Insert($3); $$ = $1; }
         |   param
-                            {  }
+                            { $$ = new cParamsNode($1); }
+;
 
 param:      expr
-                                {  }
+                                { $$ = $1; }
+;
 
 expr:       expr EQUALS addit
                                 {  }
@@ -274,7 +305,8 @@ fact:       '(' expr ')'
         |   varref
                             { $$ = $1; }
         |   func_call
-                            {  }
+                            { $$ = $1; }
+;
 
 %%
 

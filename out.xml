@@ -1,7 +1,0 @@
-<program><block><decls><var_decl><sym id="2" name="int" /><sym id="6" name="a" /></var_decl>
-</decls>
-<stmts><sym id="12" name="f5" /><assign><varref><sym id="6" name="a" /></varref>
-<sym id="11" name="f4" /></assign>
-</stmts>
-</block>
-</program>

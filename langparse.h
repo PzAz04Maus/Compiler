@@ -60,8 +60,12 @@ extern int yydebug;
     class cIntExprNode;
     class cSymbol;
     class cStructDeclNode;
+    class cArgsNode;
+    class cFuncCallNode;
+    class cFuncDeclNode;
+    class cParamsNode;
 
-#line 65 "langparse.h"
+#line 69 "langparse.h"
 
 /* Token kinds.  */
 #ifndef YYTOKENTYPE
@@ -103,7 +107,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 37 "lang.y"
+#line 41 "lang.y"
 
     int             int_val;
     float           float_val;
@@ -115,13 +119,16 @@ union YYSTYPE
     cDeclNode*      decl_node;
     cStmtsNode*     stmts_node;
     cStmtNode*      stmt_node;
-    //cPrintNode*     stmt_node;
+    //cPrintNode*   stmt_node;
     cExprNode*      expr_node;
     cIntExprNode*   int_node;
     cSymbol*        symbol;
+    cFuncDeclNode*  func_node;
+    cArgsNode*      args_node;
+    cParamsNode*    params_node;
     
 
-#line 125 "langparse.h"
+#line 132 "langparse.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

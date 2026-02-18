@@ -33,3 +33,7 @@
 #include "cAssignNode.h"
 #include "cSymbolTable.h"
 #include "cStructDeclNode.h"
+#include "cFuncDeclNode.h"
+#include "cArgsNode.h"
+#include "cFuncCallNode.h"
+#include "cParamsNode.h"

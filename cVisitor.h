@@ -27,6 +27,10 @@ class cSymbol;
 class cWhileNode;
 class cAssignNode;
 class cStructDeclNode;
+class cFuncDeclNode;
+class cArgsNode;
+class cFuncCallNode;
+class cParamsNode;
 
 class cVisitor
 {
@@ -52,4 +56,8 @@ class cVisitor
         virtual void Visit(cWhileNode *node);
         virtual void Visit(cAssignNode *node);
         virtual void Visit(cStructDeclNode *node);
+        virtual void Visit(cFuncDeclNode *node);
+        virtual void Visit(cArgsNode *node);
+        virtual void Visit(cFuncCallNode *node);
+        virtual void Visit(cParamsNode *node);
 };

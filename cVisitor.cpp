@@ -27,3 +27,7 @@ void cVisitor::Visit(cSymbol *node)           { node->VisitAllChildren(this); }
 void cVisitor::Visit(cWhileNode *node)        { node->VisitAllChildren(this); }
 void cVisitor::Visit(cAssignNode *node)       { node->VisitAllChildren(this); }
 void cVisitor::Visit(cStructDeclNode *node)   { node->VisitAllChildren(this); }
+void cVisitor::Visit(cFuncDeclNode *node)     { node->VisitAllChildren(this); }
+void cVisitor::Visit(cArgsNode *node)         { node->VisitAllChildren(this); }
+void cVisitor::Visit(cFuncCallNode *node)     { node->VisitAllChildren(this); }
+void cVisitor::Visit(cParamsNode *node)       { node->VisitAllChildren(this); }
