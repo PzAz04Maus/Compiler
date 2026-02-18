@@ -7,6 +7,7 @@
 #pragma once
 
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "cSymbol.h"
@@ -47,10 +48,15 @@ class cSymbolTable
         // Returns nullptr if the symbol is not found.
         cSymbol *FindLocal(string name);
 
+        void DeclareType(cSymbol *sym);
+        bool IsType(const string &name) const;
+
     private:
         // Stack of scopes (inner-most scope is back())
         std::vector<std::unordered_map<string, cSymbol *>> mScopes;
+        std::vector<std::unordered_set<string>> mTypeScopes;
 };
 
 // declare the global symbol table. The definition will have to be in a cpp file
 extern cSymbolTable g_symbolTable;
+

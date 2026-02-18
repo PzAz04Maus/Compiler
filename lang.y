@@ -12,6 +12,7 @@
 #include "lex.h"
 #include "astnodes.h"
 
+
 %}
 
 %code requires {
@@ -27,6 +28,7 @@
     class cExprNode;
     class cIntExprNode;
     class cSymbol;
+    class cStructDeclNode;
 }
 
 %locations
@@ -86,7 +88,7 @@
 %type <ast_node> open
 %type <ast_node> close
 %type <decl_node> var_decl
-%type <ast_node> struct_decl
+%type <decl_node> struct_decl
 %type <ast_node> array_decl
 %type <ast_node> func_decl
 %type <ast_node> func_header
@@ -96,7 +98,7 @@
 %type <ast_node> paramspec
 %type <stmts_node> stmts
 %type <stmt_node> stmt
-%type <ast_node> lval
+%type <expr_node> lval
 %type <ast_node> params
 %type <ast_node> param
 %type <expr_node> expr
@@ -136,16 +138,35 @@ decl:       var_decl ';'
         |   array_decl ';'
                             { $$ = nullptr; }
         |   struct_decl ';'
-                            { $$ = nullptr; }
+                            { $$ = $1; }
         |   func_decl
                             { $$ = nullptr; }
         |   error ';'
                             { $$ = nullptr; }
 
 var_decl:   TYPE_ID IDENTIFIER
-                                    { $$ = new cVarDeclNode($1, $2); }
-struct_decl:  STRUCT open decls close IDENTIFIER
-                                {  }
+                                    { 
+                                        cSymbol *id = $2;
+
+                                        if(g_symbolTable.FindLocal(id->GetName())==nullptr)
+                                        {
+                                            id = new cSymbol(id->GetName());
+                                            g_symbolTable.Insert(id);
+                                        }
+                                        $$ = new cVarDeclNode($1, id);
+                                    }
+struct_decl: STRUCT open decls close IDENTIFIER
+    {
+        cSymbol *typeSym = $5;
+        if (g_symbolTable.FindLocal(typeSym->GetName()) == nullptr)
+        {
+            typeSym = new cSymbol(typeSym->GetName());
+            g_symbolTable.Insert(typeSym);
+        }
+        g_symbolTable.DeclareType(typeSym);
+        $$ = new cStructDeclNode($3, typeSym);
+    }
+                                
 array_decl:   ARRAY TYPE_ID '[' INT_VAL ']' IDENTIFIER
                                 {  }
 
@@ -175,23 +196,25 @@ stmts:      stmts stmt
                             { $$ = new cStmtsNode($1); }
 
 stmt:       IF '(' expr ')' stmts ENDIF ';'
-                                {  }
+                                { $$ = new cIfNode($3, $5, nullptr); }
         |   IF '(' expr ')' stmts ELSE stmts ENDIF ';'
-                                {  }
+                                { $$ = new cIfNode($3, $5, $7); }
         |   WHILE '(' expr ')' stmt
-                                {  }
+                                { $$ = new cWhileNode($3, $5);  }
         |   PRINT '(' expr ')' ';'
                                 { $$ = new cPrintNode($3); }
         |   PRINTS '(' STRING_LIT ')' ';'
                                 { }
         |   lval '=' expr ';'
-                            {  }
+                            { $$ = new cAssignNode($1, $3); }
         |   func_call ';'
                             {  }
         |   block
-                            {  }
+                            { $$ = $1; }
         |   RETURN expr ';'
-                            {  }
+                            { $$ = new cReturnNode($2); }
+        |   RETURN '(' expr ')' ';'
+                            { $$ = new cReturnNode($3); }
         |   error ';'
                             {}
 
@@ -200,18 +223,18 @@ func_call:  IDENTIFIER '(' params ')'
         |   IDENTIFIER '(' ')'
                             {  }
 
-varref:   varref '.' varpart
-                                { $$ = $1; }
-        | varref '[' expr ']'
-                            { $$ = $1; }
-        | varpart
-                            { $$ = new cVarRefNode($1); }
+varref: varref '.' varpart
+    { ((cVarRefNode*)$1)->AddField($3); $$ = $1; }
+  | varref '[' expr ']'
+    { ((cVarRefNode*)$1)->AddIndex($3); $$ = $1; }
+  | varpart
+    { $$ = new cVarRefNode($1); }
 
 varpart:  IDENTIFIER
                                 { $$ = $1; }
 
 lval:     varref
-                                {  }
+                                { $$ = $1; }
 
 params:   params ',' param
                                 {  }

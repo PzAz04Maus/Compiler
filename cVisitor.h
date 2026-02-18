@@ -16,12 +16,17 @@ class cDeclNode;
 class cDeclsNode;
 class cExprNode;
 class cIntExprNode;
+class cIfNode;
 class cOpNode;
 class cPrintNode;
 class cProgramNode;
+class cReturnNode;
 class cStmtNode;
 class cStmtsNode;
 class cSymbol;
+class cWhileNode;
+class cAssignNode;
+class cStructDeclNode;
 
 class cVisitor
 {
@@ -36,10 +41,15 @@ class cVisitor
         virtual void Visit(cDeclsNode *node);
         virtual void Visit(cExprNode *node);
         virtual void Visit(cIntExprNode *node);
+        virtual void Visit(cIfNode *node);
         virtual void Visit(cOpNode *node);
         virtual void Visit(cPrintNode *node);
         virtual void Visit(cProgramNode *node);
+        virtual void Visit(cReturnNode *node);
         virtual void Visit(cStmtNode *node);
         virtual void Visit(cStmtsNode *node);
         virtual void Visit(cSymbol *node);
+        virtual void Visit(cWhileNode *node);
+        virtual void Visit(cAssignNode *node);
+        virtual void Visit(cStructDeclNode *node);
 };

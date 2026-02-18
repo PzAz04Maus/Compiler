@@ -63,6 +63,10 @@ identifier      {id_start}{id_cont}*
 "program"                   DO_RETURN(PROGRAM);
 "print"                     DO_RETURN(PRINT);
 "prints"                    DO_RETURN(PRINTS);
+"if"                        DO_RETURN(IF);
+"endif"                     DO_RETURN(ENDIF);
+"else"                      DO_RETURN(ELSE);
+"while"                     DO_RETURN(WHILE);
 "struct"                    DO_RETURN(STRUCT);
 "array"                     DO_RETURN(ARRAY);
 "return"                    DO_RETURN(RETURN);
@@ -98,7 +102,12 @@ identifier      {id_start}{id_cont}*
 "="                         DO_RETURN('=');
 
 "int"|"float"|"char"|"long"|"double"  { yylval.symbol = GetOrCreateSymbol(yytext); DO_RETURN(TYPE_ID); }
-{identifier}                 { yylval.symbol = GetOrCreateSymbol(yytext); DO_RETURN(IDENTIFIER); }
+{identifier} {
+    cSymbol *sym = GetOrCreateSymbol(yytext);
+    yylval.symbol = sym;
+    if (g_symbolTable.IsType(sym->GetName())) DO_RETURN(TYPE_ID);
+    DO_RETURN(IDENTIFIER);
+}
 
 .                            DO_RETURN(JUNK_TOKEN);
 

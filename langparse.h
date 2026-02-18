@@ -45,7 +45,7 @@
 extern int yydebug;
 #endif
 /* "%code requires" blocks.  */
-#line 17 "lang.y"
+#line 18 "lang.y"
 
     #include <string>
 
@@ -59,8 +59,9 @@ extern int yydebug;
     class cExprNode;
     class cIntExprNode;
     class cSymbol;
+    class cStructDeclNode;
 
-#line 64 "langparse.h"
+#line 65 "langparse.h"
 
 /* Token kinds.  */
 #ifndef YYTOKENTYPE
@@ -102,7 +103,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 35 "lang.y"
+#line 37 "lang.y"
 
     int             int_val;
     float           float_val;
@@ -120,7 +121,7 @@ union YYSTYPE
     cSymbol*        symbol;
     
 
-#line 124 "langparse.h"
+#line 125 "langparse.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

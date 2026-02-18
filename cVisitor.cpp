@@ -16,10 +16,14 @@ void cVisitor::Visit(cDeclNode *node)         { node->VisitAllChildren(this); }
 void cVisitor::Visit(cDeclsNode *node)        { node->VisitAllChildren(this); }
 void cVisitor::Visit(cExprNode *node)         { node->VisitAllChildren(this); }
 void cVisitor::Visit(cIntExprNode *node)      { node->VisitAllChildren(this); }
+void cVisitor::Visit(cIfNode *node)           { node->VisitAllChildren(this); }
 void cVisitor::Visit(cOpNode *node)           { node->VisitAllChildren(this); }
 void cVisitor::Visit(cPrintNode *node)        { node->VisitAllChildren(this); }
 void cVisitor::Visit(cProgramNode *node)      { node->VisitAllChildren(this); }
+void cVisitor::Visit(cReturnNode *node)       { node->VisitAllChildren(this); }
 void cVisitor::Visit(cStmtNode *node)         { node->VisitAllChildren(this); }
 void cVisitor::Visit(cStmtsNode *node)        { node->VisitAllChildren(this); }
 void cVisitor::Visit(cSymbol *node)           { node->VisitAllChildren(this); }
-
+void cVisitor::Visit(cWhileNode *node)        { node->VisitAllChildren(this); }
+void cVisitor::Visit(cAssignNode *node)       { node->VisitAllChildren(this); }
+void cVisitor::Visit(cStructDeclNode *node)   { node->VisitAllChildren(this); }

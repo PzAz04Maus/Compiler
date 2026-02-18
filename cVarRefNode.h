@@ -13,9 +13,14 @@ class cVarRefNode : public cExprNode
     public:
         explicit cVarRefNode(cSymbol *sym) : cExprNode()
         {
-            AddChild(sym);
+            AddField(sym);
         }
 
         virtual string NodeType() { return string("varref"); }
         virtual void Visit(cVisitor *visitor) { visitor->Visit(this); }
+        void AddField(cSymbol *sym) { AddChild(sym); }
+        void AddIndex(cExprNode *expr) { AddChild(expr); }
+
+    private:
+
 };
