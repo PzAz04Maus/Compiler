@@ -66,6 +66,18 @@ cSymbol *cSymbolTable::FindLocal(string name)
     return nullptr;
 }
 
+cSymbol *cSymbolTable::FindOuter(string name)
+{
+    // Search from outer-most (front) to inner-most (back)
+    for (auto it = mScopes.begin(); it != mScopes.end(); ++it)
+    {
+        auto found = it->find(name);
+        if (found != it->end())
+            return found->second;
+    }
+    return nullptr;
+}
+
 bool cSymbolTable::IsType(const string &name) const
 {
     for (auto it = mTypeScopes.rbegin(); it != mTypeScopes.rend(); ++it)

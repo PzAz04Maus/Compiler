@@ -15,7 +15,12 @@ class cVarDeclNode : public cDeclNode
         {
             AddChild(typeSym);
             AddChild(nameSym);
+
+            // Attach this declaration to the variable symbol.
+            if (nameSym != nullptr && nameSym->GetDecl() == nullptr) nameSym->SetDecl(this);
         }
+
+        virtual bool IsVar() { return true; }
 
         virtual string NodeType() { return string("var_decl"); }
         virtual void Visit(cVisitor *visitor) { visitor->Visit(this); }

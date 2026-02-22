@@ -48,6 +48,10 @@ class cSymbolTable
         // Returns nullptr if the symbol is not found.
         cSymbol *FindLocal(string name);
 
+        // Find a symbol in the outer-most scope where it exists.
+        // (Searches from global -> inner; returns the first match.)
+        cSymbol *FindOuter(string name);
+
         void DeclareType(cSymbol *sym);
         bool IsType(const string &name) const;
 

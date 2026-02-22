@@ -14,6 +14,7 @@
 #include <fstream>
 //#include "cSymbol.h"
 #include "cSymbolTable.h"
+#include "cBaseTypeNode.h"
 #include "lex.h"
 #include "astnodes.h"
 #include "langparse.h"
@@ -31,11 +32,19 @@ int main(int argc, char **argv)
 
     // Preload primitive types so they have stable IDs and can be reused.
     // This matches the expected AST output for declarations.
-    g_symbolTable.Insert(new cSymbol("char"));
-    g_symbolTable.Insert(new cSymbol("int"));
-    g_symbolTable.Insert(new cSymbol("float"));
-    g_symbolTable.Insert(new cSymbol("long"));
-    g_symbolTable.Insert(new cSymbol("double"));
+    auto addBaseType = [](const std::string& name, int size, bool isFloat)
+    {
+        cSymbol* sym = new cSymbol(name);
+        sym->SetDecl(new cBaseTypeNode(name, size, isFloat));  // attach decl here
+        g_symbolTable.Insert(sym);
+    };
+
+    // Keep insertion order stable so symbol IDs match expected test outputs.
+    addBaseType("char",   1, false);
+    addBaseType("int",    4, false);
+    addBaseType("float",  4, true);
+    addBaseType("long",   8, false);
+    addBaseType("double", 8, true);
 
     if (argc > 1)
     {
@@ -75,7 +84,7 @@ int main(int argc, char **argv)
         {
             std::cout << yyast_root->ToString();
         } else {
-            std::cout << " Errors in compile\n";
+            std::cout << yynerrs << " Errors in compile\n";
         }
     }
 

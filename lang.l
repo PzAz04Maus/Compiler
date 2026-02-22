@@ -10,11 +10,27 @@
 #include "lex.h"
 #include "langparse.h"
 #include "cSymbolTable.h"
+#include "cDeclNode.h"
 
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <string>
 
+// Optional lexer debug: enable by running with `LEXDBG=1` in the environment.
+static bool LexerDebugEnabled()
+{
+    static int enabled = -1;
+    if (enabled == -1)
+    {
+        const char *v = std::getenv("LEXDBG");
+        enabled = (v != nullptr && v[0] != '\0' && std::strcmp(v, "0") != 0) ? 1 : 0;
+    }
+    return enabled == 1;
+}
+
+// Lab 5A: keep creating symbols in the lexer (stable IDs), but treat them as
+// undefined until a declaration node attaches via sym->SetDecl(...).
 static cSymbol *GetOrCreateSymbol(const char *text)
 {
     std::string name(text);
@@ -101,11 +117,27 @@ identifier      {id_start}{id_cont}*
 "<"                         DO_RETURN('<');
 "="                         DO_RETURN('=');
 
-"int"|"float"|"char"|"long"|"double"  { yylval.symbol = GetOrCreateSymbol(yytext); DO_RETURN(TYPE_ID); }
+"int"|"float"|"char"|"long"|"double"  {
+    yylval.symbol = GetOrCreateSymbol(yytext);
+    DO_RETURN(TYPE_ID);
+}
 {identifier} {
     cSymbol *sym = GetOrCreateSymbol(yytext);
     yylval.symbol = sym;
-    if (g_symbolTable.IsType(sym->GetName())) DO_RETURN(TYPE_ID);
+
+    // DEBUG (temporary): diagnose why 'aaa' at line 13 becomes TYPE_ID.
+    if (LexerDebugEnabled() && std::strcmp(yytext, "aaa") == 0 && yylineno == 13)
+    {
+        std::fprintf(stderr,
+            "LEXDBG line %d: '%s' decl=%p isType=%d isVar=%d\n",
+            yylineno,
+            yytext,
+            (void*)sym->GetDecl(),
+            (sym->GetDecl() ? sym->GetDecl()->IsType() : -1),
+            (sym->GetDecl() ? sym->GetDecl()->IsVar() : -1));
+    }
+
+    if (sym->GetDecl() != nullptr && sym->GetDecl()->IsType()) DO_RETURN(TYPE_ID);
     DO_RETURN(IDENTIFIER);
 }
 
