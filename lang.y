@@ -238,15 +238,18 @@ func_decl:  func_header ';'
         {
             cSymbol *sem = $1->GetSemanticSym();
             cFuncDeclNode *canon = (sem != nullptr) ? dynamic_cast<cFuncDeclNode*>(sem->GetDecl()) : nullptr;
-            if (canon != nullptr && canon != $1 && canon->HasDefinition())
+            if (canon != nullptr && canon->HasDefinition())
             {
                 SemanticParseError(sem->GetName() + " already has a definition");
                 CHECK_ERROR();
             }
 
-            $1->SetDecls($3);
-            $1->SetStmts($4);
-            if (sem != nullptr) sem->SetDecl($1);
+            if (canon == nullptr || !canon->HasDefinition())
+            {
+                $1->SetDecls($3);
+                $1->SetStmts($4);
+                if (sem != nullptr) sem->SetDecl($1);
+            }
             $$ = $1;
             g_symbolTable.DecreaseScope();
         }
@@ -254,14 +257,17 @@ func_decl:  func_header ';'
         {
             cSymbol *sem = $1->GetSemanticSym();
             cFuncDeclNode *canon = (sem != nullptr) ? dynamic_cast<cFuncDeclNode*>(sem->GetDecl()) : nullptr;
-            if (canon != nullptr && canon != $1 && canon->HasDefinition())
+            if (canon != nullptr && canon->HasDefinition())
             {
                 SemanticParseError(sem->GetName() + " already has a definition");
                 CHECK_ERROR();
             }
 
-            $1->SetStmts($3);
-            if (sem != nullptr) sem->SetDecl($1);
+            if (canon == nullptr || !canon->HasDefinition())
+            {
+                $1->SetStmts($3);
+                if (sem != nullptr) sem->SetDecl($1);
+            }
             $$ = $1;
             g_symbolTable.DecreaseScope();
         }

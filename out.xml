@@ -1,11 +1,2 @@
-<program><block><decls><func><sym id="2" name="int" /><sym id="6" name="foo" /><stmts><return><int value="1" /></return>
-</stmts>
-</func>
-<func><sym id="2" name="int" /><sym id="6" name="foo" /><stmts><return><int value="1" /></return>
-</stmts>
-</func>
-</decls>
-<stmts><funcCall><sym id="6" name="foo" /></funcCall>
-</stmts>
-</block>
-</program>
+ERROR: foo already has a definition near line 11
+1 Errors in compile
