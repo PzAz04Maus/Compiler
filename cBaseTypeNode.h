@@ -30,9 +30,8 @@ class cBaseTypeNode : public cDeclNode
         // return the symbol for the type
         virtual cDeclNode *GetType() { return this; }
 
-        // return the name of the item that is declared
-        virtual cSymbol*  GetName() 
-        { return g_symbolTable.Find(m_name); }
+        // Lab 5B: name used in error messages
+        virtual string GetName() { return m_name; }
 
         virtual string NodeType() { return "type"; }
         // return a string representation of the node

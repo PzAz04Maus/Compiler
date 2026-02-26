@@ -12,9 +12,13 @@
 //
 
 #include "cStmtNode.h"
+#include "cDeclNode.h"
 
 class cExprNode : public cStmtNode
 {
     public:
         cExprNode() : cStmtNode() {}
+
+    // Lab 5B: Every expression has a type.
+    virtual cDeclNode *GetType() = 0;
 };

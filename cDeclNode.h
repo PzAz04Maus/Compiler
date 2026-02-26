@@ -31,4 +31,39 @@ class cDeclNode : public cAstNode
 
     // Size in bytes (base types override).
     virtual int GetSize()   { return 0; }
+
+    // Lab 5B: provide a name for error messages.
+    virtual string GetName() = 0;
+
+    // Lab 5B: type compatibility for assignment and argument passing.
+    // Interprets this object as the destination type.
+    virtual bool IsCompatibleWith(cDeclNode *type)
+    {
+        if (type == nullptr) return false;
+        if (this == type) return true;
+
+        // Base-type compatibility (char/int/long/float/double).
+        if (IsFloat())
+        {
+            // float/double destinations accept any integer, and same/lesser float.
+            if (!type->IsFloat()) return true;
+
+            // float <- double is illegal, double <- float is legal.
+            return GetSize() >= type->GetSize();
+        }
+
+        // Integer destinations cannot accept floating sources.
+        if (type->IsFloat()) return false;
+
+        // char accepts only char.
+        if (IsChar()) return type->IsChar();
+
+        // int accepts char/int.
+        if (GetSize() == 4) return type->IsChar() || type->GetSize() == 4;
+
+        // long accepts any integer.
+        if (GetSize() == 8) return !type->IsFloat();
+
+        return false;
+    }
 };

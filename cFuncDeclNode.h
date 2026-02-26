@@ -24,6 +24,12 @@ public:
 
     virtual bool IsFunc() { return true; }
 
+    virtual string GetName()
+    {
+        cSymbol *sym = GetSemanticSym();
+        return (sym != nullptr) ? sym->GetName() : string("");
+    }
+
     void SetArgs(cArgsNode *args)
     {
         if (m_argsSet) return;
@@ -57,6 +63,12 @@ public:
 
     cSymbol *GetSemanticSym() { return m_semanticSym; }
     cSymbol *GetReturnSym() { return (cSymbol*)GetChild(0); }
+    cSymbol *GetPrintSym() { return (cSymbol*)GetChild(1); }
+    cArgsNode *GetArgsNode()
+    {
+        // children: return type, printed symbol, optional args, optional decls, optional stmts
+        return dynamic_cast<cArgsNode*>(GetChild(2));
+    }
     int GetParamCount() { return m_paramCount; }
     bool HasDefinition() { return m_hasDefinition; }
 

@@ -118,9 +118,14 @@ static bool g_semanticErrorHappened = false;
 %type <params_node> params
 %type <expr_node> param
 %type <expr_node> expr
+%type <expr_node> or_expr
+%type <expr_node> and_expr
+%type <expr_node> rel_expr
 %type <expr_node> addit
 %type <expr_node> term
 %type <expr_node> fact
+
+%right UMINUS
 %type <expr_node> varref
 %type <symbol> varpart
 
@@ -422,10 +427,33 @@ param:      expr
                                 { $$ = $1; }
 ;
 
-expr:       expr EQUALS addit
-                                { $$ = new cBinaryExprNode($1,EQUALS,$3); }
+expr:       or_expr
+                                { $$ = $1; }
+
+or_expr:    or_expr OR and_expr
+                                { $$ = new cBinaryExprNode($1, OR, $3); }
+        |   and_expr
+                                { $$ = $1; }
+
+and_expr:   and_expr AND rel_expr
+                                { $$ = new cBinaryExprNode($1, AND, $3); }
+        |   rel_expr
+                                { $$ = $1; }
+
+rel_expr:   rel_expr '>' addit
+                                { $$ = new cBinaryExprNode($1, '>', $3); }
+        |   rel_expr '<' addit
+                                { $$ = new cBinaryExprNode($1, '<', $3); }
+        |   rel_expr GE addit
+                                { $$ = new cBinaryExprNode($1, GE, $3); }
+        |   rel_expr LE addit
+                                { $$ = new cBinaryExprNode($1, LE, $3); }
+        |   rel_expr EQUALS addit
+                                { $$ = new cBinaryExprNode($1, EQUALS, $3); }
+        |   rel_expr NOT_EQUALS addit
+                                { $$ = new cBinaryExprNode($1, NOT_EQUALS, $3); }
         |   addit
-                            { $$ = $1; }
+                                { $$ = $1; }
 
 addit:      addit '+' term
                                 { $$ = new cBinaryExprNode($1, '+', $3); }
@@ -445,6 +473,8 @@ term:       term '*' fact
 
 fact:       '(' expr ')'
                                 { $$ = $2; }
+    |   '-' fact %prec UMINUS
+                { $$ = new cBinaryExprNode(new cIntExprNode(0), '-', $2); }
         |   INT_VAL
                             { $$ = new cIntExprNode($1); }
         |   FLOAT_VAL

@@ -9,6 +9,7 @@ public:
     void Insert(cDeclNode *decl) { AddChild(decl); }
 
     int NumArgs() { return NumChildren(); }
+    cDeclNode *GetArg(int index) { return dynamic_cast<cDeclNode*>(GetChild(index)); }
 
     virtual string NodeType() { return string("args"); }
     virtual void Visit(cVisitor *visitor) { visitor->Visit(this); }

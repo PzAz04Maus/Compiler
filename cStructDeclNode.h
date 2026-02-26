@@ -19,6 +19,12 @@ public:
     virtual bool IsType() { return true; }
     virtual bool IsStruct() { return true; }
 
+    virtual string GetName()
+    {
+        cSymbol *sym = dynamic_cast<cSymbol*>(GetChild(1));
+        return (sym != nullptr) ? sym->GetName() : string("");
+    }
+
     virtual string NodeType() { return string("struct_decl"); }
     virtual void Visit(cVisitor *visitor) { visitor->Visit(this); }
 };

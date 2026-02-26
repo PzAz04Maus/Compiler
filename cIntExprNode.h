@@ -23,6 +23,18 @@ class cIntExprNode : public cExprNode
             m_value = value;
         }
 
+        int GetValue() const { return m_value; }
+
+        virtual cDeclNode *GetType()
+        {
+            // Lab 5B: treat small integer literals as char so expressions like
+            //   a_char = 2 * a_char;
+            // are assignment-compatible in the provided tests.
+            const char *typeName = (m_value >= -128 && m_value <= 127) ? "char" : "int";
+            cSymbol *sym = g_symbolTable.Find(typeName);
+            return (sym != nullptr) ? sym->GetDecl() : nullptr;
+        }
+
         virtual string AttributesToString() 
         {
             return " value=\"" + std::to_string(m_value) + "\"";

@@ -29,6 +29,12 @@ class cFloatExprNode : public cExprNode
         virtual string NodeType() { return string("float"); }
         virtual void Visit(cVisitor *visitor) { visitor->Visit(this); }
 
+        virtual cDeclNode *GetType()
+        {
+            cSymbol *sym = g_symbolTable.Find("float");
+            return (sym != nullptr) ? sym->GetDecl() : nullptr;
+        }
+
     protected:
         double m_value;
 };

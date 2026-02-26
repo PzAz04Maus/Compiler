@@ -15,6 +15,7 @@ class cBlockNode;
 class cDeclNode;
 class cDeclsNode;
 class cExprNode;
+class cFloatExprNode;
 class cIntExprNode;
 class cIfNode;
 class cOpNode;
@@ -25,26 +26,32 @@ class cReturnNode;
 class cStmtNode;
 class cStmtsNode;
 class cSymbol;
+class cVarDeclNode;
+class cVarRefNode;
 class cWhileNode;
 class cAssignNode;
 class cStructDeclNode;
+class cArrayDeclNode;
 class cFuncDeclNode;
 class cArgsNode;
 class cFuncCallNode;
 class cParamsNode;
+class cBinaryExprNode;
 
 class cVisitor
 {
     public:
         cVisitor() {}
 
-        virtual void VisitAllNodes(cAstNode *node) = 0;
+        // Default traversal entry point. Implemented in cVisitor.cpp.
+        virtual void VisitAllNodes(cAstNode *node);
 
         virtual void Visit(cAstNode *node);
         virtual void Visit(cBlockNode *node);
         virtual void Visit(cDeclNode *node);
         virtual void Visit(cDeclsNode *node);
         virtual void Visit(cExprNode *node);
+        virtual void Visit(cFloatExprNode *node);
         virtual void Visit(cIntExprNode *node);
         virtual void Visit(cIfNode *node);
         virtual void Visit(cOpNode *node);
@@ -55,11 +62,15 @@ class cVisitor
         virtual void Visit(cStmtNode *node);
         virtual void Visit(cStmtsNode *node);
         virtual void Visit(cSymbol *node);
+        virtual void Visit(cVarDeclNode *node);
+        virtual void Visit(cVarRefNode *node);
         virtual void Visit(cWhileNode *node);
         virtual void Visit(cAssignNode *node);
         virtual void Visit(cStructDeclNode *node);
+        virtual void Visit(cArrayDeclNode *node);
         virtual void Visit(cFuncDeclNode *node);
         virtual void Visit(cArgsNode *node);
         virtual void Visit(cFuncCallNode *node);
         virtual void Visit(cParamsNode *node);
+        virtual void Visit(cBinaryExprNode *node);
 };

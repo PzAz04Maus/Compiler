@@ -98,7 +98,8 @@ extern int yydebug;
     STRUCT = 277,                  /* STRUCT  */
     ARRAY = 278,                   /* ARRAY  */
     RETURN = 279,                  /* RETURN  */
-    JUNK_TOKEN = 280               /* JUNK_TOKEN  */
+    JUNK_TOKEN = 280,              /* JUNK_TOKEN  */
+    UMINUS = 281                   /* UMINUS  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -128,7 +129,7 @@ union YYSTYPE
     cParamsNode*    params_node;
     
 
-#line 132 "langparse.h"
+#line 133 "langparse.h"
 
 };
 typedef union YYSTYPE YYSTYPE;
