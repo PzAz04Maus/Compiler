@@ -134,10 +134,10 @@ static bool g_semanticErrorHappened = false;
 program: PROGRAM block
                                 { $$ = new cProgramNode($2);
                                   yyast_root = $$;
-                                  if (yynerrs == 0) 
-                                      YYACCEPT;
-                                  else
-                                      YYABORT;
+                                  // Even if semantic errors were detected during parsing,
+                                  // continue so later phases (Lab 5B/6 visitors) can run and
+                                  // report additional errors. Some test cases expect this.
+                                  YYACCEPT;
                                 }
 block:  open decls stmts close
                                 { $$ = new cBlockNode($2, $3); }
@@ -283,10 +283,34 @@ func_header: func_prefix paramsspec ')'
                                     $1->SetArgs($2);
                                     cSymbol *sem = $1->GetSemanticSym();
                                     cFuncDeclNode *canon = (sem != nullptr) ? dynamic_cast<cFuncDeclNode*>(sem->GetDecl()) : nullptr;
-                                    if (canon != nullptr && canon != $1 && canon->GetParamCount() != $1->GetParamCount())
+                                    if (canon != nullptr && canon != $1)
                                     {
-                                        SemanticParseError(sem->GetName() + " redeclared with a different number of parameters");
-                                        CHECK_ERROR();
+                                        if (canon->GetParamCount() != $1->GetParamCount())
+                                        {
+                                            SemanticParseError(sem->GetName() + " redeclared with a different number of parameters");
+                                            CHECK_ERROR();
+                                        }
+                                        else
+                                        {
+                                            // Same number of parameters: ensure the parameter types match.
+                                            cArgsNode *a1 = canon->GetArgsNode();
+                                            cArgsNode *a2 = $1->GetArgsNode();
+                                            bool mismatch = false;
+                                            for (int i = 0; i < canon->GetParamCount(); i++)
+                                            {
+                                                cVarDeclNode *v1 = (a1 != nullptr) ? dynamic_cast<cVarDeclNode*>(a1->GetArg(i)) : nullptr;
+                                                cVarDeclNode *v2 = (a2 != nullptr) ? dynamic_cast<cVarDeclNode*>(a2->GetArg(i)) : nullptr;
+                                                cSymbol *t1 = (v1 != nullptr) ? v1->GetTypeSym() : nullptr;
+                                                cSymbol *t2 = (v2 != nullptr) ? v2->GetTypeSym() : nullptr;
+                                                if (t1 == nullptr || t2 == nullptr) continue;
+                                                if (t1->GetName() != t2->GetName()) { mismatch = true; break; }
+                                            }
+                                            if (mismatch)
+                                            {
+                                                SemanticParseError(sem->GetName() + " previously defined with different parameters");
+                                                CHECK_ERROR();
+                                            }
+                                        }
                                     }
                                     $$ = $1;
                                 }
@@ -329,7 +353,7 @@ func_prefix: TYPE_ID IDENTIFIER '('
     // Conflict with a non-function in the same scope.
     if (semSym->GetDecl() != nullptr && prevFunc == nullptr)
     {
-        SemanticParseError("Symbol " + nameTok->GetName() + " already defined in current scope");
+        SemanticParseError(nameTok->GetName() + " previously defined as other than a function");
         CHECK_ERROR();
     }
 
@@ -339,21 +363,19 @@ func_prefix: TYPE_ID IDENTIFIER '('
         cSymbol *prevRet = prevFunc->GetReturnSym();
         if (prevRet != nullptr && $1 != nullptr && prevRet->GetName() != $1->GetName())
         {
-            SemanticParseError(nameTok->GetName() + " previously declared with different return type");
+            SemanticParseError(nameTok->GetName() + " previously defined with different return type");
             CHECK_ERROR();
         }
     }
 
     // If there is already a definition, later prototypes should reuse it.
-    if (prevFunc != nullptr && prevFunc->HasDefinition())
-    {
-        $$ = prevFunc;
-    }
-    else
-    {
-        $$ = new cFuncDeclNode($1, printSym, semSym);
-        if (semSym->GetDecl() == nullptr) semSym->SetDecl($$);
-    }
+    // Always create a node for this appearance so we can validate and report
+    // mismatches (e.g., a prototype after a definition).
+    $$ = new cFuncDeclNode($1, printSym, semSym);
+
+    // Only set the semantic symbol if this is the first declaration in scope.
+    // Otherwise keep the existing canonical declaration/definition.
+    if (semSym->GetDecl() == nullptr) semSym->SetDecl($$);
 
     // parameter scope (so params don't reuse global 'a')
     g_symbolTable.IncreaseScope();
@@ -499,8 +521,7 @@ int yyerror(const char *msg)
 // Function that gets called when a semantic error happens
 void SemanticParseError(std::string error)
 {
-    std::cout << "ERROR: " << error << " near line " 
-              << yylineno << "\n";
+    g_semanticErrors.push_back({yylineno, ++g_semanticErrorSeq, error});
     g_semanticErrorHappened = true;
     yynerrs++;
 }

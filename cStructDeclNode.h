@@ -25,6 +25,9 @@ public:
         return (sym != nullptr) ? sym->GetName() : string("");
     }
 
+    cDeclsNode *GetFields() { return dynamic_cast<cDeclsNode*>(GetChild(0)); }
+    cSymbol *GetTypeSym() { return dynamic_cast<cSymbol*>(GetChild(1)); }
+
     virtual string NodeType() { return string("struct_decl"); }
     virtual void Visit(cVisitor *visitor) { visitor->Visit(this); }
 };

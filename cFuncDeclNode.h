@@ -69,6 +69,27 @@ public:
         // children: return type, printed symbol, optional args, optional decls, optional stmts
         return dynamic_cast<cArgsNode*>(GetChild(2));
     }
+
+    cDeclsNode *GetDeclsNode()
+    {
+        // children: ret, print, [args], [decls], [stmts]
+        for (int i = 2; i < NumChildren(); i++)
+        {
+            if (dynamic_cast<cDeclsNode*>(GetChild(i)) != nullptr)
+                return dynamic_cast<cDeclsNode*>(GetChild(i));
+        }
+        return nullptr;
+    }
+
+    cStmtsNode *GetStmtsNode()
+    {
+        for (int i = 2; i < NumChildren(); i++)
+        {
+            if (dynamic_cast<cStmtsNode*>(GetChild(i)) != nullptr)
+                return dynamic_cast<cStmtsNode*>(GetChild(i));
+        }
+        return nullptr;
+    }
     int GetParamCount() { return m_paramCount; }
     bool HasDefinition() { return m_hasDefinition; }
 

@@ -28,6 +28,7 @@ public:
 
     cSymbol *GetBaseTypeSym() { return dynamic_cast<cSymbol*>(GetChild(0)); }
     cSymbol *GetNameSym() { return dynamic_cast<cSymbol*>(GetChild(1)); }
+    int GetCount() const { return m_count; }
 
     virtual std::string NodeType() { return "array_decl"; }
     virtual void Visit(cVisitor *visitor) { visitor->Visit(this); }

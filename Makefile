@@ -34,7 +34,7 @@ clean:
 .c.o:
 	g++ $(COPTS) $< -o $@
 
-main.o: main.cpp langparse.c langlex.c 
+main.o: main.cpp langparse.c langlex.c cComputeSize.h 
 	g++ $(COPTS) main.cpp -o $@
 
 langlex.o: langlex.c

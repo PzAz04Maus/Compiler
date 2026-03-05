@@ -12,6 +12,8 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <utility>
+#include <cstdint>
 
 using std::string;
 using std::vector;
@@ -26,6 +28,18 @@ extern int yynerrs;         // Increment on each semantic error
 // By declaring it here, all AST node implementations have access to it.
 void SemanticParseError(std::string error);
 
+// Shared semantic error buffer. Both parse-time and visitor-time semantic
+// checks append here; main prints them in a stable order.
+struct cSemanticErrorEntry
+{
+    int line;
+    std::int64_t seq;
+    std::string message;
+};
+
+extern std::vector<cSemanticErrorEntry> g_semanticErrors;
+extern std::int64_t g_semanticErrorSeq;
+
 class cAstNode
 {
     public:
@@ -34,6 +48,30 @@ class cAstNode
         cAstNode() : m_LineNum(yylineno), m_hasSemanticError(false) {}
 
         virtual ~cAstNode() = default;
+
+        //*************************************
+        // Extra XML attributes that can be added by later passes (e.g., Lab 6
+        // size/offset computation) without requiring every node type to
+        // override AttributesToString().
+        void SetComputedAttribute(const string &key, const string &value)
+        {
+            for (auto &kv : m_computedAttrs)
+            {
+                if (kv.first == key)
+                {
+                    kv.second = value;
+                    return;
+                }
+            }
+            m_computedAttrs.emplace_back(key, value);
+        }
+
+        void SetComputedAttribute(const string &key, long long value)
+        {
+            SetComputedAttribute(key, std::to_string(value));
+        }
+
+        void ClearComputedAttributes() { m_computedAttrs.clear(); }
 
     //****************************************
     // As protected, these methods are limited as to where you call them.
@@ -122,6 +160,10 @@ class cAstNode
 
             result += "<" + NodeType();
             result += AttributesToString();
+            for (const auto &kv : m_computedAttrs)
+            {
+                result += " " + kv.first + "=\"" + kv.second + "\"";
+            }
 
             if (HasChildren())
             {
@@ -143,8 +185,7 @@ class cAstNode
         // Used to print semantic errors
         void SemanticError(string message)
         {
-            std::cout << "ERROR: " << message << " near line " << m_LineNum 
-                << "\n";
+            g_semanticErrors.push_back({m_LineNum, ++g_semanticErrorSeq, message});
             yynerrs++;
             m_hasSemanticError = true;
         }
@@ -191,5 +232,9 @@ class cAstNode
         int m_LineNum;                      // The source line at the time the
                                             // node was created
         bool m_hasSemanticError;
+
+        // Insertion-ordered list of computed attributes to append to
+        // AttributesToString() output.
+        std::vector<std::pair<string, string>> m_computedAttrs;
 };
 

@@ -11,6 +11,8 @@
 #include <unistd.h>
 #include <iostream>
 #include <fstream>
+#include <algorithm>
+#include <vector>
 #include "cSymbolTable.h"
 #include "lex.h"
 #include "astnodes.h"
@@ -21,12 +23,15 @@
 #include "cSymbol.h"
 
 #define LAB5B
-//#define LAB6
+#define LAB6
 //#define LAB7
 
 // define global variables
 //cSymbolTable g_SymbolTable;
 long long cSymbol::nextId;
+
+std::vector<cSemanticErrorEntry> g_semanticErrors;
+std::int64_t g_semanticErrorSeq = 0;
 
 // takes two string args: input_file, and output_file
 int main(int argc, char **argv)
@@ -44,11 +49,15 @@ int main(int argc, char **argv)
     };
 
     // Keep insertion order stable so symbol IDs match expected test outputs.
-    addBaseType("char",   1, false);
-    addBaseType("int",    4, false);
-    addBaseType("float",  4, true);
+    // Lab 6 expected: char=1, int=4, float=8.
+    addBaseType("char",  1, false);
+    addBaseType("int",   4, false);
+    addBaseType("float", 8, true);
+
+#ifdef LAB7
     addBaseType("long",   8, false);
     addBaseType("double", 8, true);
+#endif
 
     if (argc > 1)
     {
@@ -128,6 +137,18 @@ int main(int argc, char **argv)
 
     if (yynerrs != 0)
     {
+        // Emit semantic errors in stable, source order.
+        std::stable_sort(g_semanticErrors.begin(), g_semanticErrors.end(),
+            [](const cSemanticErrorEntry &a, const cSemanticErrorEntry &b)
+            {
+                if (a.line != b.line) return a.line < b.line;
+                return a.seq < b.seq;
+            });
+
+        for (const auto &e : g_semanticErrors)
+        {
+            std::cout << "ERROR: " << e.message << " near line " << e.line << "\n";
+        }
         std::cout << yynerrs << " Errors in compile\n";
     }
 

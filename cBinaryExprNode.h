@@ -50,25 +50,22 @@ class cBinaryExprNode : public cExprNode
             if (lt == nullptr) return rt;
             if (rt == nullptr) return lt;
 
+            // This language treats float as the only floating type.
+            // Some lab suites use an 8-byte float; it should still behave
+            // like "float" (not "double"), so avoid inferring a "double"
+            // type that may not exist in the symbol table.
             auto rank = [](cDeclNode *t) -> int {
                 if (t == nullptr) return -1;
-                if (t->IsFloat()) return (t->GetSize() >= 8) ? 4 : 3; // double : float
+                if (t->IsFloat()) return 2;
                 if (t->IsChar()) return 0;
-                if (t->GetSize() >= 8) return 2; // long
-                return 1; // int
+                return 1; // int (default integer type)
             };
 
             int lr = rank(lt);
             int rr = rank(rt);
             int best = (lr > rr) ? lr : rr;
 
-            const char *name = "int";
-            if (best == 0) name = "char";
-            else if (best == 1) name = "int";
-            else if (best == 2) name = "long";
-            else if (best == 3) name = "float";
-            else if (best == 4) name = "double";
-
+            const char *name = (best == 2) ? "float" : ((best == 0) ? "char" : "int");
             cSymbol *sym = g_symbolTable.Find(name);
             return (sym != nullptr) ? sym->GetDecl() : nullptr;
         }

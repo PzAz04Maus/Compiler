@@ -13,7 +13,7 @@ public:
         cSymbol *resolved = nullptr;
         if (name != nullptr) resolved = g_symbolTable.Find(name->GetName());
 
-        if (resolved == nullptr || resolved->GetDecl() == nullptr || !resolved->GetDecl()->IsFunc())
+        if (resolved == nullptr || resolved->GetDecl() == nullptr)
         {
             if (name != nullptr)
                 SemanticParseError("Symbol " + name->GetName() + " not defined");

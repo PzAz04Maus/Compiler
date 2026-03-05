@@ -53,6 +53,20 @@ void cSemantics::Visit(cAssignNode *node)
     cExprNode *rhs = node->GetRhs();
     if (lhs == nullptr || rhs == nullptr) return;
 
+    // LHS must be an lval. In this language, assigning to a function symbol
+    // is illegal (Lab 6 expects: "<name> is not an lval").
+    auto *lhsVar = dynamic_cast<cVarRefNode*>(lhs);
+    if (lhsVar != nullptr)
+    {
+        cSymbol *base = lhsVar->GetBaseSymbol();
+        cDeclNode *baseDecl = (base != nullptr) ? base->GetDecl() : nullptr;
+        if (baseDecl != nullptr && baseDecl->IsFunc())
+        {
+            node->SemanticError(base->GetName() + " is not an lval");
+            return;
+        }
+    }
+
     cDeclNode *lhsType = lhs->GetType();
     cDeclNode *rhsType = rhs->GetType();
     if (lhsType == nullptr || rhsType == nullptr) return;
@@ -73,11 +87,67 @@ void cSemantics::Visit(cVarRefNode *node)
 
     cDeclNode *decl = base->GetDecl();
 
-    // Illegal: using a function as a variable.
-    if (decl->IsFunc())
+    // Struct field access checks.
+    bool hasFieldAccess = false;
+    for (int i = 1; i < node->NumParts(); i++)
     {
-        node->SemanticError("Symbol " + base->GetName() + " is a function, not a variable");
-        return;
+        if (dynamic_cast<cSymbol*>(node->GetPart(i)) != nullptr) { hasFieldAccess = true; break; }
+    }
+
+    if (hasFieldAccess)
+    {
+        auto *varDecl = dynamic_cast<cVarDeclNode*>(decl);
+        if (varDecl != nullptr)
+        {
+            cSymbol *typeSym = varDecl->GetTypeSym();
+            cDeclNode *typeDecl = (typeSym != nullptr) ? typeSym->GetDecl() : nullptr;
+            std::string prefix = base->GetName();
+
+            for (int i = 1; i < node->NumParts(); i++)
+            {
+                cSymbol *field = dynamic_cast<cSymbol*>(node->GetPart(i));
+                if (field == nullptr) continue;
+
+                auto *st = dynamic_cast<cStructDeclNode*>(typeDecl);
+                if (st == nullptr)
+                {
+                    node->SemanticError(prefix + " is not a struct");
+                    break;
+                }
+
+                cVarDeclNode *fieldDecl = nullptr;
+                cDeclsNode *fields = st->GetFields();
+                if (fields != nullptr)
+                {
+                    struct Finder : public cVisitor
+                    {
+                        std::string want;
+                        cVarDeclNode *found = nullptr;
+                        explicit Finder(std::string n) : want(std::move(n)) {}
+                        void Visit(cVarDeclNode *n) override
+                        {
+                            if (n == nullptr) return;
+                            cSymbol *nm = n->GetNameSym();
+                            if (nm != nullptr && nm->GetName() == want) found = n;
+                        }
+                    };
+
+                    Finder f(field->GetName());
+                    fields->VisitAllChildren(&f);
+                    fieldDecl = f.found;
+                }
+
+                if (fieldDecl == nullptr)
+                {
+                    node->SemanticError(field->GetName() + " is not a field of " + prefix);
+                    break;
+                }
+
+                prefix += "." + field->GetName();
+                cSymbol *ft = fieldDecl->GetTypeSym();
+                typeDecl = (ft != nullptr) ? ft->GetDecl() : nullptr;
+            }
+        }
     }
 
     // Array checks only apply when subscripting is present.
@@ -121,12 +191,16 @@ void cSemantics::Visit(cFuncCallNode *node)
     if (fnSym == nullptr || fnSym->GetDecl() == nullptr) return;
 
     auto *fnDecl = dynamic_cast<cFuncDeclNode*>(fnSym->GetDecl());
-    if (fnDecl == nullptr) return;
+    if (fnDecl == nullptr)
+    {
+        node->SemanticError(fnSym->GetName() + " is not a function");
+        return;
+    }
 
     // Must be defined.
     if (!fnDecl->HasDefinition())
     {
-        node->SemanticError("Function " + fnSym->GetName() + " is not fully defined");
+        node->SemanticError(fnSym->GetName() + " is not fully defined");
         return;
     }
 
