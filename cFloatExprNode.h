@@ -12,6 +12,7 @@
 #include <sstream>
 
 #include "cExprNode.h"
+#include "cSymbolTable.h"
 
 class cFloatExprNode : public cExprNode
 {

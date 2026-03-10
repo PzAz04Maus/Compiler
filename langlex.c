@@ -1,6 +1,6 @@
-#line 2 "langlex.c"
+#line 1 "langlex.c"
 
-#line 4 "langlex.c"
+#line 3 "langlex.c"
 
 #define  YY_INT_ALIGNED short int
 
@@ -594,9 +594,9 @@ static cSymbol *GetOrCreateSymbol(const char *text)
 
 int Return(int val);
 
-#line 598 "langlex.c"
+#line 597 "langlex.c"
 #define YY_NO_INPUT 1
-#line 600 "langlex.c"
+#line 599 "langlex.c"
 
 #define INITIAL 0
 
@@ -816,7 +816,7 @@ YY_DECL
 
 #line 76 "lang.l"
     // token definitions. I gave "program" as an example
-#line 820 "langlex.c"
+#line 819 "langlex.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -1115,7 +1115,7 @@ YY_RULE_SETUP
 #line 147 "lang.l"
 ECHO;
 	YY_BREAK
-#line 1119 "langlex.c"
+#line 1118 "langlex.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 

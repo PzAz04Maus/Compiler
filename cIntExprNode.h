@@ -13,6 +13,7 @@
 
 #include "cAstNode.h"
 #include "cExprNode.h"
+#include "cSymbolTable.h"
 
 class cIntExprNode : public cExprNode
 {
