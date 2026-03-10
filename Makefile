@@ -15,7 +15,9 @@ OBJS=main.o \
 	 langparse.o \
 	 cVisitor.o \
 	 cSymbolTable.o \
-	 cSemantics.o
+	 cSemantics.o \
+	 cCodeGen.o \
+	 emit.o
 
 all: lang
 
@@ -51,6 +53,10 @@ langparse.h: langparse.c
 cVisitor.o: cVisitor.cpp langparse.h
 
 cSemantics.o: cSemantics.cpp langparse.h
+
+cCodeGen.o: cCodeGen.cpp cCodeGen.h langparse.h
+
+emit.o: emit.cpp emit.h
 
 lang: $(OBJS)
 	g++ $(OBJS) -o lang

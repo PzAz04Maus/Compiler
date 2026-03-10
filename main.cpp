@@ -99,6 +99,15 @@ int main(int argc, char **argv)
                 cCodeGen coder(outfile_base + ".sl");
                 coder.VisitAllNodes(yyast_root);
             }
+
+            // Assemble the output so the Lab7 test harness can run it.
+            std::string cmd = "slasm " + outfile_base + ".sl io320.sl";
+            int asmResult = system(cmd.c_str());
+            if (asmResult != 0)
+            {
+                std::cerr << "ERROR: slasm failed\n";
+                return 1;
+            }
         }
     }
 
