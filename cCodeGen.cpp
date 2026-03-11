@@ -207,14 +207,29 @@ bool cCodeGen::EmitVarRefAddress(cVarRefNode *node, long long &outElemSize)
     outElemSize = 0;
     if (node == nullptr) return false;
 
-    // No struct fields yet.
-    for (int i = 1; i < node->NumParts(); i++)
+    auto FindStructField = [&](cStructDeclNode *structDecl, const std::string &fieldName) -> cVarDeclNode*
     {
-        if (dynamic_cast<cSymbol*>(node->GetPart(i)) != nullptr)
+        if (structDecl == nullptr) return nullptr;
+        cDeclsNode *fields = structDecl->GetFields();
+        if (fields == nullptr) return nullptr;
+
+        struct Finder : public cVisitor
         {
-            return false;
-        }
-    }
+            std::string want;
+            cVarDeclNode *found = nullptr;
+            explicit Finder(std::string n) : want(std::move(n)) {}
+            void Visit(cVarDeclNode *n) override
+            {
+                if (n == nullptr) return;
+                cSymbol *nm = n->GetNameSym();
+                if (nm != nullptr && nm->GetName() == want) found = n;
+            }
+        };
+
+        Finder f(fieldName);
+        fields->VisitAllChildren(&f);
+        return f.found;
+    };
 
     cSymbol *baseSym = node->GetBaseSymbol();
     if (baseSym == nullptr) return false;
@@ -230,38 +245,61 @@ bool cCodeGen::EmitVarRefAddress(cVarRefNode *node, long long &outElemSize)
     // Start with address of the base variable.
     EmitAddrFromOffset(baseOffset);
 
-    // Apply indices.
-    int subs = node->NumSubscripts();
+    // Walk fields and indices in-order.
     cDeclNode *curType = typeDecl;
 
-    for (int s = 0; s < subs; s++)
+    for (int i = 1; i < node->NumParts(); i++)
     {
-        auto *arr = dynamic_cast<cArrayDeclNode*>(curType);
-        if (arr == nullptr) return false;
+        cAstNode *part = node->GetPart(i);
+        if (part == nullptr) return false;
 
-        cSymbol *elemSym = arr->GetBaseTypeSym();
-        cDeclNode *elemDecl = (elemSym != nullptr) ? elemSym->GetDecl() : nullptr;
-        long long elemSize = GetTypeSizeBytes(elemDecl);
-        if (elemSize <= 0) return false;
+        if (auto *idx = dynamic_cast<cExprNode*>(part))
+        {
+            auto *arr = dynamic_cast<cArrayDeclNode*>(curType);
+            if (arr == nullptr) return false;
 
-        cExprNode *idx = node->GetSubscript(s);
-        if (idx == nullptr) return false;
+            cSymbol *elemSym = arr->GetBaseTypeSym();
+            cDeclNode *elemDecl = (elemSym != nullptr) ? elemSym->GetDecl() : nullptr;
+            long long elemSize = GetTypeSizeBytes(elemDecl);
+            if (elemSize <= 0) return false;
 
-        // Stack before: [baseAddr]
-        // Evaluate idx, scale, add -> [baseAddr + idx*elemSize]
-        idx->Visit(this);            // [baseAddr, idx]
-        EmitPushInt((int)elemSize);  // [baseAddr, idx, elemSize]
-        EmitInstr("TIMES");         // [baseAddr, offsetBytes]
-        EmitInstr("PLUS");          // [elemAddr]
+            // Stack before: [baseAddr]
+            // Evaluate idx, scale, add -> [baseAddr + idx*elemSize]
+            idx->Visit(this);            // [baseAddr, idx]
+            EmitPushInt((int)elemSize);  // [baseAddr, idx, elemSize]
+            EmitInstr("TIMES");         // [baseAddr, offsetBytes]
+            EmitInstr("PLUS");          // [elemAddr]
 
-        curType = elemDecl;
-        outElemSize = elemSize;
+            curType = elemDecl;
+            continue;
+        }
+
+        if (auto *fieldSym = dynamic_cast<cSymbol*>(part))
+        {
+            auto *st = dynamic_cast<cStructDeclNode*>(curType);
+            if (st == nullptr) return false;
+
+            auto *fieldVar = dynamic_cast<cVarDeclNode*>(fieldSym->GetDecl());
+            if (fieldVar == nullptr)
+            {
+                fieldVar = FindStructField(st, fieldSym->GetName());
+                if (fieldVar == nullptr) return false;
+            }
+
+            long long fieldOffset = fieldVar->GetComputedAttributeInt("offset", 0);
+            EmitPushInt((int)fieldOffset);
+            EmitInstr("PLUS");
+
+            cSymbol *fieldTypeSym = fieldVar->GetTypeSym();
+            curType = (fieldTypeSym != nullptr) ? fieldTypeSym->GetDecl() : nullptr;
+            if (curType == nullptr) return false;
+            continue;
+        }
+
+        return false;
     }
 
-    if (subs == 0)
-    {
-        outElemSize = GetTypeSizeBytes(curType);
-    }
+    outElemSize = GetTypeSizeBytes(curType);
 
     return true;
 }
@@ -344,6 +382,8 @@ void cCodeGen::Visit(cFuncCallNode *node)
     if (fn == nullptr) return;
 
     cParamsNode *params = node->GetParamsNode();
+    int argc = (params != nullptr) ? params->NumParams() : 0;
+
     if (params != nullptr)
     {
         // Push actual parameters in source order.
@@ -351,6 +391,14 @@ void cCodeGen::Visit(cFuncCallNode *node)
     }
 
     EmitInstr(std::string("CALL @") + fn->GetName());
+
+    // Stack preservation: remove arguments while keeping return value on top.
+    // After CALL the return value is on top; args remain beneath it.
+    for (int i = 0; i < argc; i++)
+    {
+        EmitInstr("SWAP");
+        EmitInstr("POP");
+    }
 }
 
 void cCodeGen::Visit(cReturnNode *node)
@@ -360,4 +408,56 @@ void cCodeGen::Visit(cReturnNode *node)
     // Visit child expression (push return value), then return.
     cVisitor::Visit(node);
     EmitInstr("RETURNV");
+}
+
+void cCodeGen::Visit(cIfNode *node)
+{
+    if (!m_ok || node == nullptr) return;
+
+    cExprNode *cond = node->GetCond();
+    cStmtsNode *thenStmts = node->GetThen();
+    cStmtsNode *elseStmts = node->GetElse();
+
+    std::string elseLabel = GenerateLabel();
+    std::string endLabel = GenerateLabel();
+
+    if (cond != nullptr) cond->Visit(this);
+
+    // If condition == 0, jump to else (or end).
+    if (elseStmts != nullptr)
+        EmitInstr("JUMPE @" + elseLabel);
+    else
+        EmitInstr("JUMPE @" + endLabel);
+
+    if (thenStmts != nullptr) thenStmts->Visit(this);
+
+    if (elseStmts != nullptr)
+    {
+        EmitInstr("JUMP @" + endLabel);
+        EmitInstr(elseLabel + ":");
+        elseStmts->Visit(this);
+    }
+
+    EmitInstr(endLabel + ":");
+}
+
+void cCodeGen::Visit(cWhileNode *node)
+{
+    if (!m_ok || node == nullptr) return;
+
+    cExprNode *cond = node->GetCond();
+    cStmtNode *body = node->GetBody();
+
+    std::string startLabel = GenerateLabel();
+    std::string endLabel = GenerateLabel();
+
+    EmitInstr(startLabel + ":");
+
+    if (cond != nullptr) cond->Visit(this);
+    EmitInstr("JUMPE @" + endLabel);
+
+    if (body != nullptr) body->Visit(this);
+    EmitInstr("JUMP @" + startLabel);
+
+    EmitInstr(endLabel + ":");
 }

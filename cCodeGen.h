@@ -23,6 +23,8 @@ public:
     void Visit(cFuncDeclNode *node) override;
     void Visit(cFuncCallNode *node) override;
     void Visit(cReturnNode *node) override;
+    void Visit(cIfNode *node) override;
+    void Visit(cWhileNode *node) override;
 
 private:
     bool m_ok = false;

@@ -105,6 +105,23 @@ void cSemantics::Visit(cVarRefNode *node)
 
             for (int i = 1; i < node->NumParts(); i++)
             {
+                // If we see an index expression, it indexes into the current
+                // type (must be array) and updates the current type to the
+                // element type. This allows patterns like A[0].x.
+                if (dynamic_cast<cExprNode*>(node->GetPart(i)) != nullptr)
+                {
+                    auto *arr = dynamic_cast<cArrayDeclNode*>(typeDecl);
+                    if (arr == nullptr)
+                    {
+                        node->SemanticError(prefix + " is not an array");
+                        break;
+                    }
+
+                    cSymbol *elemTypeSym = arr->GetBaseTypeSym();
+                    typeDecl = (elemTypeSym != nullptr) ? elemTypeSym->GetDecl() : nullptr;
+                    continue;
+                }
+
                 cSymbol *field = dynamic_cast<cSymbol*>(node->GetPart(i));
                 if (field == nullptr) continue;
 
