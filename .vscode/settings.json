@@ -1,3 +1,4 @@
 {
-    "makefile.configureOnOpen": true
+    "makefile.configureOnOpen": true,
+    "html.format.wrapLineLength": 0
 }

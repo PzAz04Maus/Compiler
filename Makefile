@@ -21,6 +21,20 @@ OBJS=main.o \
 
 all: lang
 
+
+.PHONY: test test_lab7 test_lab7_xfail test_lab7_rtfail
+
+test: test_lab7 test_lab7_xfail test_lab7_rtfail
+
+test_lab7: lang
+	bash test/Lab7/regress
+
+test_lab7_xfail: lang
+	bash test/Lab7xfail/regress
+
+test_lab7_rtfail: lang
+	bash test/Lab7rtfail/regress
+
 clean:
 	rm -f $(OBJS)
 	rm -f langlex.c

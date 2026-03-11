@@ -73,6 +73,36 @@ class cAstNode
 
         void ClearComputedAttributes() { m_computedAttrs.clear(); }
 
+        //*************************************
+        // Query computed attributes (added by later passes, e.g., Lab 6).
+        // Returns true if present.
+        bool TryGetComputedAttribute(const string &key, string &outValue) const
+        {
+            for (const auto &kv : m_computedAttrs)
+            {
+                if (kv.first == key)
+                {
+                    outValue = kv.second;
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        long long GetComputedAttributeInt(const string &key, long long defaultValue = 0) const
+        {
+            string v;
+            if (!TryGetComputedAttribute(key, v)) return defaultValue;
+            try
+            {
+                return std::stoll(v);
+            }
+            catch (...)
+            {
+                return defaultValue;
+            }
+        }
+
     //****************************************
     // As protected, these methods are limited as to where you call them.
     // I impose an even more-strict requirement:

@@ -1,10 +1,11 @@
 .function main
 main:
 ADJSP 0 
-PUSH 1 
-CALL @print
-POP
-PUSH 2 
+PUSH 7 
+PUSH 3 
+PUSH 3 
+MINUS
+MOD
 CALL @print
 POP
 PUSH 0 

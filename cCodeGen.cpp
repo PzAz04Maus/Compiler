@@ -20,12 +20,23 @@ namespace
         EmitString("\n");
     }
 
-    int GetBlockSize(/*cBlockNode *block*/)
+    long long RoundUpToWord(long long v)
     {
-        // Current Lab7 visible tests don't declare locals; ADJSP 0 is correct.
-        // If you later add query accessors for computed size/offset attributes,
-        // this can be upgraded to allocate locals based on the computed sizes.
-        return 0;
+        const long long kWord = 4;
+        if (v <= 0) return 0;
+        long long rem = v % kWord;
+        if (rem == 0) return v;
+        return v + (kWord - rem);
+    }
+
+    void EmitAddrFromOffset(long long offset)
+    {
+        // Leaves address (FP + offset) on stack.
+        EmitString("PUSH");
+        EmitInt((int)offset);
+        EmitString("\n");
+        EmitInstr("PUSHFP");
+        EmitInstr("PLUS");
     }
 }
 
@@ -46,19 +57,31 @@ void cCodeGen::Visit(cProgramNode *node)
     EmitInstr(".function main");
     EmitInstr("main:");
 
-    // Allocate locals for the (implicit) main function.
-    int localsSize = GetBlockSize();
-
-    EmitString("ADJSP");
-    EmitInt(localsSize);
-    EmitString("\n");
-
-    // Emit the program body.
-    cVisitor::Visit(node);
+    // Emit the program body (top-level block will allocate locals).
+    node->VisitAllChildren(this);
 
     // Return 0.
     EmitPushInt(0);
     EmitInstr("RETURNV");
+}
+
+void cCodeGen::Visit(cBlockNode *node)
+{
+    if (!m_ok || node == nullptr) return;
+
+    // Only allocate once for the top-most block in the current frame.
+    if (m_blockDepth == 0)
+    {
+        long long localsSize = node->GetComputedAttributeInt("size", 0);
+        localsSize = RoundUpToWord(localsSize);
+        EmitString("ADJSP");
+        EmitInt((int)localsSize);
+        EmitString("\n");
+    }
+
+    m_blockDepth++;
+    cVisitor::Visit(node);
+    m_blockDepth--;
 }
 
 void cCodeGen::Visit(cPrintNode *node)
@@ -114,4 +137,66 @@ void cCodeGen::Visit(cBinaryExprNode *node)
 
     int op = (opNode != nullptr) ? opNode->GetOp() : 0;
     EmitOp(op);
+}
+
+void cCodeGen::Visit(cVarRefNode *node)
+{
+    if (!m_ok || node == nullptr) return;
+
+    // For now, support simple locals: a
+    // (struct fields and array indexing will be added later).
+    if (node->NumParts() != 1 || node->NumSubscripts() != 0) return;
+
+    cSymbol *base = node->GetBaseSymbol();
+    if (base == nullptr) return;
+
+    auto *decl = dynamic_cast<cVarDeclNode*>(base->GetDecl());
+    if (decl == nullptr) return;
+
+    long long offset = decl->GetComputedAttributeInt("offset", 0);
+    long long size = decl->GetComputedAttributeInt("size", 4);
+
+    if (size == 1)
+    {
+        EmitAddrFromOffset(offset);
+        EmitInstr("PUSHCVARIND");
+        return;
+    }
+
+    EmitString("PUSHVAR");
+    EmitInt((int)offset);
+    EmitString("\n");
+}
+
+void cCodeGen::Visit(cAssignNode *node)
+{
+    if (!m_ok || node == nullptr) return;
+
+    cExprNode *lhs = node->GetLhs();
+    cExprNode *rhs = node->GetRhs();
+    if (lhs == nullptr || rhs == nullptr) return;
+
+    // Compute RHS value first.
+    rhs->Visit(this);
+
+    // Support only simple variable lvalues for now.
+    auto *lhsVar = dynamic_cast<cVarRefNode*>(lhs);
+    if (lhsVar == nullptr) return;
+    if (lhsVar->NumParts() != 1 || lhsVar->NumSubscripts() != 0) return;
+
+    cSymbol *base = lhsVar->GetBaseSymbol();
+    if (base == nullptr) return;
+
+    auto *decl = dynamic_cast<cVarDeclNode*>(base->GetDecl());
+    if (decl == nullptr) return;
+
+    long long offset = decl->GetComputedAttributeInt("offset", 0);
+    long long size = decl->GetComputedAttributeInt("size", 4);
+
+    // Store: stack has [value]. Push address, then store indirect.
+    EmitAddrFromOffset(offset);
+    if (size == 1)
+        EmitInstr("POPCVARIND");
+    else
+        EmitInstr("POPVARIND");
 }
