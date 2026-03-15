@@ -8,9 +8,13 @@
 // phil.howard@oit.edu
 //
 
+
 #include "cAstNode.h"
 #include "cDeclNode.h"
 
+// cDeclsNode represents a list of declaration nodes in the AST.
+// Used to group multiple variable, function, or struct declarations together.
+// Inherits from cAstNode and manages a list of cDeclNode children.
 class cDeclsNode : public cAstNode
 {
     public:

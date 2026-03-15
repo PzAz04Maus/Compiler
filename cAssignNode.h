@@ -8,6 +8,8 @@
 #include "cStmtNode.h"
 #include "cExprNode.h"
 
+// cAssignNode represents an assignment statement in the AST.
+// Inherits from cStmtNode and manages the left-hand side and right-hand side expressions.
 class cAssignNode : public cStmtNode
 {
     public:

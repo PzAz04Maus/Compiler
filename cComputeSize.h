@@ -81,11 +81,20 @@ public:
             case AllocKind::Args:
             {
                 // Parameters live in word-sized stack slots.
-                int slot = RoundUp(std::max(t.size, 1), kWordSize);
+                // Extra credit (Lab7): arrays are passed by reference (a single word
+                // holding the base address), not copied onto the stack.
+                int passSize = t.size;
+                if (typeSym->GetDecl() != nullptr && typeSym->GetDecl()->IsArray())
+                {
+                    passSize = kWordSize;
+                    node->SetComputedAttribute("byref", 1);
+                }
+
+                int slot = RoundUp(std::max(passSize, 1), kWordSize);
                 int offset = m_argsTopOffset;
-                node->SetComputedAttribute("size", t.size);
+                node->SetComputedAttribute("size", passSize);
                 node->SetComputedAttribute("offset", offset);
-                m_declSize[node] = t.size;
+                m_declSize[node] = passSize;
                 m_declOffset[node] = offset;
                 m_argsTopOffset -= slot;
                 m_argsTotalSize += slot;

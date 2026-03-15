@@ -1,9 +1,0 @@
-{
-  "source": "Lab7/Lab 7 point values.pdf",
-  "pages": [
-    {
-      "page": 1,
-      "text": "Point values for test suite\n5 char, int, var assign, print\n5 char does char assigns, not word assigns\n5 All operators work\n5 precedence and associativity\n5 array refs as both lvals and rvals\n5 function calls without params\n5 function calls with params\n5 int, return values\n5 stack preservation\n5 if\n5 while\n5 Comment describing tests + orderly progression\nPoint values for code\n5 char, int, var assign, print\n5 char does char assigns, not word assigns\n5 All operators work\n5 precedence and associativity\n5 structs as both lvals and rvals\n10 if statements\n10 while statements\n10 function calls without params\n10 function calls with params\n10 int, return values\n10 stack preservation\n5 type casts in visitor\n10 other style issues"
-    }
-  ]
-}

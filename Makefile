@@ -24,7 +24,8 @@ all: lang
 
 .PHONY: test test_lab7 test_lab7_xfail test_lab7_rtfail
 
-test: test_lab7 test_lab7_xfail test_lab7_rtfail
+test: lang
+	bash test/regress_all
 
 test_lab7: lang
 	bash test/Lab7/regress
@@ -41,8 +42,14 @@ clean:
 	rm -f langparse.c
 	rm -f langparse.h
 	rm -f lang
+	# Test/build artifacts
+	rm -f langout.sl
+	rm -f langout.slb
+	rm -f out
+	rm -f *.out *.compile.out *.run.out
 	rm -f out.xml
 	rm -f out2.xml
+	rm -f rtfail.test9.compile.out
 
 .cpp.o:
 	g++ $(COPTS) $< -o $@

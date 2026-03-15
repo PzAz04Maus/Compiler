@@ -2,6 +2,8 @@
 #include "cAstNode.h"
 #include "cDeclNode.h"
 
+// cArgsNode represents a list of argument declarations for a function or procedure in the AST.
+// Inherits from cAstNode and manages a list of cDeclNode children, each representing an argument.
 class cArgsNode : public cAstNode
 {
 public:

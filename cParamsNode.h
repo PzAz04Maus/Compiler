@@ -2,6 +2,8 @@
 #include "cAstNode.h"
 #include "cExprNode.h"
 
+// cParamsNode represents a list of parameter expressions for a function or procedure call in the AST.
+// Inherits from cAstNode and manages a list of cExprNode children, each representing an argument expression.
 class cParamsNode : public cAstNode
 {
 public:

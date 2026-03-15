@@ -19,7 +19,9 @@ static FILE* Output;
 static int  Next_Label = 1;
 
 //*****************************************
-// Open output files and write the prefix
+// Opens the output file for code generation.
+// filename: name of the output file to write.
+// Returns true on success, false on failure.
 bool InitOutput(const std::string filename)
 {
     Output = fopen(filename.c_str(), "w");
@@ -33,6 +35,8 @@ bool InitOutput(const std::string filename)
 }
 //*****************************************
 // output postfix, copy functions to tail of main file and close files
+// Closes the output file after code generation is complete.
+// Returns true on success.
 bool FinalizeOutput()
 {
     fclose(Output);
@@ -40,7 +44,8 @@ bool FinalizeOutput()
     return true;
 }
 //*****************************************
-// Generate a unique label for GOTO statements
+// Generates a unique label string for use in code generation (e.g., for jumps).
+// Returns a new unique label each call.
 std::string GenerateLabel()
 {
     Next_Label++;
@@ -49,12 +54,15 @@ std::string GenerateLabel()
     return label;
 }
 //*****************************************
-// write an integer constant to the output
+// Writes an integer constant to the output file.
+// val: integer value to write.
 void EmitInt(int val)
 {
     fprintf(Output, " %d ", val);
 }
 //*****************************************
+// Writes a string to the output file.
+// str: string to write.
 void EmitString(std::string str)
 {
     fprintf(Output, "%s", str.c_str());

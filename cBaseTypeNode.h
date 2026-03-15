@@ -10,6 +10,8 @@
 #include "cDeclNode.h"
 #include "cSymbolTable.h"
 
+// cBaseTypeNode represents a primitive type declaration (e.g., int, char, float) in the AST.
+// Inherits from cDeclNode and stores the type's name, size, and whether it is a float.
 class cBaseTypeNode : public cDeclNode
 {
     public:

@@ -7,12 +7,16 @@
 
 namespace
 {
+    // Emits a single instruction string followed by a newline to the output file.
+    // s: instruction string to emit.
     void EmitInstr(const std::string &s)
     {
         EmitString(s);
         EmitString("\n");
     }
 
+    // Emits a PUSH instruction for an integer value.
+    // v: integer value to push onto the stack.
     void EmitPushInt(int v)
     {
         EmitString("PUSH");
@@ -20,6 +24,9 @@ namespace
         EmitString("\n");
     }
 
+    // Rounds up a value to the nearest word boundary (4 bytes).
+    // v: value in bytes.
+    // Returns the rounded-up value.
     long long RoundUpToWord(long long v)
     {
         const long long kWord = 4;
@@ -29,6 +36,8 @@ namespace
         return v + (kWord - rem);
     }
 
+    // Emits code to compute the address at FP + offset and leaves it on the stack.
+    // offset: byte offset from frame pointer.
     void EmitAddrFromOffset(long long offset)
     {
         // Leaves address (FP + offset) on stack.
@@ -40,16 +49,21 @@ namespace
     }
 }
 
+// Constructor: initializes code generation and opens the output file.
+// outputFile: name of the file to write generated code to.
 cCodeGen::cCodeGen(const std::string &outputFile)
 {
     m_ok = InitOutput(outputFile);
 }
 
+// Destructor: finalizes output if initialization succeeded.
 cCodeGen::~cCodeGen()
 {
     if (m_ok) (void)FinalizeOutput();
 }
 
+// Visits the root program node and emits code for all functions and the main program.
+// node: root AST node for the program.
 void cCodeGen::Visit(cProgramNode *node)
 {
     if (!m_ok || node == nullptr) return;
@@ -72,6 +86,8 @@ void cCodeGen::Visit(cProgramNode *node)
     EmitInstr("RETURNV");
 }
 
+// Visits a block node, emitting code for local variable allocation and contained statements.
+// node: AST node for a block.
 void cCodeGen::Visit(cBlockNode *node)
 {
     if (!m_ok || node == nullptr) return;
@@ -99,6 +115,8 @@ void cCodeGen::Visit(cBlockNode *node)
     m_blockDepth--;
 }
 
+// Visits a list of statements, handling function-call statements specially to pop return values.
+// node: AST node representing a list of statements.
 void cCodeGen::Visit(cStmtsNode *node)
 {
     if (!m_ok || node == nullptr) return;
@@ -120,6 +138,8 @@ void cCodeGen::Visit(cStmtsNode *node)
     }
 }
 
+// Visits a print statement node and emits code to call the print function and clean up the stack.
+// node: AST node for a print statement.
 void cCodeGen::Visit(cPrintNode *node)
 {
     if (!m_ok || node == nullptr) return;
@@ -128,15 +148,24 @@ void cCodeGen::Visit(cPrintNode *node)
     cVisitor::Visit(node);
 
     EmitInstr("CALL @print");
+    // io320.sl's @print expects one 32-bit argument in the caller frame.
+    // Clean up the argument (leave return value on top), then discard return.
+    EmitString("POPARGS");
+    EmitInt(4);
+    EmitString("\n");
     EmitInstr("POP");
 }
 
+// Visits an integer expression node and emits code to push its value onto the stack.
+// node: AST node for an integer constant.
 void cCodeGen::Visit(cIntExprNode *node)
 {
     if (!m_ok || node == nullptr) return;
     EmitPushInt(node->GetValue());
 }
 
+// Emits the appropriate instruction for a binary operator.
+// op: operator code (e.g., '+', '-', EQUALS, etc.).
 void cCodeGen::EmitOp(int op)
 {
     switch (op)
@@ -160,6 +189,8 @@ void cCodeGen::EmitOp(int op)
     }
 }
 
+// Visits a binary expression node and emits code for its operands and operator.
+// node: AST node for a binary expression.
 void cCodeGen::Visit(cBinaryExprNode *node)
 {
     if (!m_ok || node == nullptr) return;
@@ -175,6 +206,9 @@ void cCodeGen::Visit(cBinaryExprNode *node)
     EmitOp(op);
 }
 
+// Computes the size in bytes of a type declaration (base, array, or struct).
+// decl: type declaration node.
+// Returns the size in bytes.
 long long cCodeGen::GetTypeSizeBytes(cDeclNode *decl)
 {
     if (decl == nullptr) return 0;
@@ -202,6 +236,10 @@ long long cCodeGen::GetTypeSizeBytes(cDeclNode *decl)
     return 4;
 }
 
+// Emits code to compute the address of a variable reference (including arrays/structs).
+// node: variable reference AST node.
+// outElemSize: set to the size of the referenced element.
+// Returns true on success, false on error.
 bool cCodeGen::EmitVarRefAddress(cVarRefNode *node, long long &outElemSize)
 {
     outElemSize = 0;
@@ -238,12 +276,20 @@ bool cCodeGen::EmitVarRefAddress(cVarRefNode *node, long long &outElemSize)
     if (baseDecl == nullptr) return false;
 
     long long baseOffset = baseDecl->GetComputedAttributeInt("offset", 0);
+    bool baseByRef = (baseDecl->GetComputedAttributeInt("byref", 0) != 0);
     cSymbol *typeSym = baseDecl->GetTypeSym();
     cDeclNode *typeDecl = (typeSym != nullptr) ? typeSym->GetDecl() : nullptr;
     if (typeDecl == nullptr) return false;
 
     // Start with address of the base variable.
     EmitAddrFromOffset(baseOffset);
+
+    // If this variable is a by-reference parameter, the slot contains a pointer
+    // to the actual object. Load that pointer so indexing uses the pointee base.
+    if (baseByRef)
+    {
+        EmitInstr("PUSHVARIND");
+    }
 
     // Walk fields and indices in-order.
     cDeclNode *curType = typeDecl;
@@ -304,6 +350,8 @@ bool cCodeGen::EmitVarRefAddress(cVarRefNode *node, long long &outElemSize)
     return true;
 }
 
+// Visits a variable reference node and emits code to load its value from memory.
+// node: AST node for a variable reference.
 void cCodeGen::Visit(cVarRefNode *node)
 {
     if (!m_ok || node == nullptr) return;
@@ -318,6 +366,8 @@ void cCodeGen::Visit(cVarRefNode *node)
         EmitInstr("PUSHVARIND");
 }
 
+// Visits an assignment statement node and emits code to store the right-hand value into the left-hand variable.
+// node: AST node for an assignment statement.
 void cCodeGen::Visit(cAssignNode *node)
 {
     if (!m_ok || node == nullptr) return;
@@ -343,6 +393,8 @@ void cCodeGen::Visit(cAssignNode *node)
         EmitInstr("POPVARIND");
 }
 
+// Visits a function declaration node and emits code for the function body if it has a definition.
+// node: AST node for a function declaration.
 void cCodeGen::Visit(cFuncDeclNode *node)
 {
     if (!m_ok || node == nullptr) return;
@@ -374,6 +426,8 @@ void cCodeGen::Visit(cFuncDeclNode *node)
     EmitInstr("RETURNV");
 }
 
+// Visits a function call node and emits code to push arguments, call the function, and clean up the stack.
+// node: AST node for a function call.
 void cCodeGen::Visit(cFuncCallNode *node)
 {
     if (!m_ok || node == nullptr) return;
@@ -387,20 +441,55 @@ void cCodeGen::Visit(cFuncCallNode *node)
     if (params != nullptr)
     {
         // Push actual parameters in source order.
-        params->VisitAllChildren(this);
+        // Extra credit (Lab7): arrays are passed by reference, so when an
+        // argument expression has an array type we push its base address (not
+        // the value of its first element).
+        for (int i = 0; i < params->NumParams(); i++)
+        {
+            cExprNode *arg = params->GetParam(i);
+            if (arg == nullptr) continue;
+
+            cDeclNode *argType = arg->GetType();
+            if (argType != nullptr && argType->IsArray())
+            {
+                if (auto *vr = dynamic_cast<cVarRefNode*>(arg))
+                {
+                    long long ignored = 0;
+                    if (!EmitVarRefAddress(vr, ignored)) return;
+                    continue;
+                }
+            }
+
+            arg->Visit(this);
+        }
     }
 
     EmitInstr(std::string("CALL @") + fn->GetName());
 
     // Stack preservation: remove arguments while keeping return value on top.
-    // After CALL the return value is on top; args remain beneath it.
-    for (int i = 0; i < argc; i++)
+    // Prefer POPARGS with the byte size computed during cComputeSize (mirrors
+    // the older Lab7/cParamSize.h logic and matches the STACKL guide).
+    int argBytes = 0;
+    if (fn->GetDecl() != nullptr)
     {
-        EmitInstr("SWAP");
-        EmitInstr("POP");
+        auto *fnDecl = dynamic_cast<cFuncDeclNode*>(fn->GetDecl());
+        if (fnDecl != nullptr && fnDecl->GetArgsNode() != nullptr)
+        {
+            argBytes = fnDecl->GetArgsNode()->GetComputedAttributeInt("size", 0);
+        }
+    }
+    if (argBytes <= 0) argBytes = argc * 4;
+
+    if (argBytes > 0)
+    {
+        EmitString("POPARGS");
+        EmitInt(argBytes);
+        EmitString("\n");
     }
 }
 
+// Visits a return statement node and emits code to return a value from a function.
+// node: AST node for a return statement.
 void cCodeGen::Visit(cReturnNode *node)
 {
     if (!m_ok || node == nullptr) return;
@@ -410,6 +499,8 @@ void cCodeGen::Visit(cReturnNode *node)
     EmitInstr("RETURNV");
 }
 
+// Visits an if statement node and emits code for condition, then, and else branches.
+// node: AST node for an if statement.
 void cCodeGen::Visit(cIfNode *node)
 {
     if (!m_ok || node == nullptr) return;
@@ -441,6 +532,8 @@ void cCodeGen::Visit(cIfNode *node)
     EmitInstr(endLabel + ":");
 }
 
+// Visits a while statement node and emits code for the loop condition and body.
+// node: AST node for a while statement.
 void cCodeGen::Visit(cWhileNode *node)
 {
     if (!m_ok || node == nullptr) return;

@@ -4,6 +4,8 @@
 #include "cDeclNode.h"
 #include "cSymbol.h"
 
+// cArrayDeclNode represents an array type declaration in the AST.
+// Inherits from cDeclNode and manages the base type, name, and array size.
 class cArrayDeclNode : public cDeclNode
 {
 public:

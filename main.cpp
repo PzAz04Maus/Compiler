@@ -32,6 +32,8 @@ std::int64_t g_semanticErrorSeq = 0;
 
 namespace
 {
+    // Adds a primitive base type (char, int, float) to the symbol table.
+    // name: type name; size: bytes; isFloat: true if floating point.
     void AddBaseType(const std::string &name, int size, bool isFloat)
     {
         cSymbol *sym = new cSymbol(name);
@@ -39,6 +41,7 @@ namespace
         g_symbolTable.Insert(sym);
     }
 
+    // Prints all collected semantic errors to stderr, sorted by line and sequence.
     void EmitSemanticErrors()
     {
         std::stable_sort(g_semanticErrors.begin(), g_semanticErrors.end(),
@@ -55,7 +58,8 @@ namespace
     }
 }
 
-// takes two string args: input_file, and output_file
+// Main entry point for the lang compiler.
+// argc: argument count; argv: argument vector (expects input and output file names).
 int main(int argc, char **argv)
 {
     std::cout << "Stephen Carter" << std::endl;

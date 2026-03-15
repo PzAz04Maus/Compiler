@@ -1,4 +1,8 @@
 {
     "makefile.configureOnOpen": true,
-    "html.format.wrapLineLength": 0
+    "html.format.wrapLineLength": 0,
+
+
+    "line-length-checker.lineLength": 1000000,
+    "C_Cpp.default.compilerPath": "/usr/bin/gcc"
 }

@@ -5,6 +5,8 @@
 #include "cStmtsNode.h"
 #include "cArgsNode.h"
 
+// cFuncDeclNode represents a function declaration in the AST.
+// Inherits from cDeclNode and manages return type, name, arguments, and body.
 class cFuncDeclNode : public cDeclNode
 {
 public:

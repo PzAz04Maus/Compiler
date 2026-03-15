@@ -4,6 +4,8 @@
 #include "cDeclsNode.h"
 #include "cSymbol.h"
 
+// cStructDeclNode represents a struct type declaration in the AST.
+// Inherits from cDeclNode and manages the list of fields and the struct type symbol.
 class cStructDeclNode : public cDeclNode
 {
 public:
